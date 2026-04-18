@@ -23,9 +23,14 @@ export function estimateDriveMinutes(distanceKm: number): number {
   return Math.round((distanceKm * WINDING_FACTOR) / AVG_KMH * 60);
 }
 
+// Round to nearest 5 min and prefix with ~. The underlying estimate is
+// haversine × winding factor (no routing API), and we now compute it from
+// a hub center rather than the visitor's actual location, so single-minute
+// precision (e.g. "47m") overstates the accuracy. "~45m" reads honest.
 export function formatDriveTime(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+  const rounded = Math.round(minutes / 5) * 5;
+  if (rounded < 60) return `~${rounded}m`;
+  const h = Math.floor(rounded / 60);
+  const m = rounded % 60;
+  return m === 0 ? `~${h}h` : `~${h}h ${m}m`;
 }
