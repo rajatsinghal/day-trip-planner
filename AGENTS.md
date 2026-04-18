@@ -14,6 +14,23 @@ the rest.
 
 ---
 
+## Prerequisites: what your agent needs
+
+Section §8 below requires real web research. To follow that rule,
+your agent must have **web search and web fetch tools enabled** —
+e.g. `WebSearch` + `WebFetch` in Claude Code, the Web tool in
+claude.ai, comparable tools in Codex / Cursor / Grok / etc. If
+those tools are denied or unavailable, **stop and surface the
+blocker** rather than fabricating destinations from training-data
+recall (which §8 forbids and §10 lists as a PR-rejection criterion).
+
+If you're a human and your agent has flagged a missing tool: enable
+it (in claude.ai web, toggle the Web tool; in Claude Code, allowlist
+`WebSearch` and `WebFetch` in your `.claude/settings.json` or
+approve them when prompted) and re-run.
+
+---
+
 ## 0. What you're building
 
 This app shows day trips around a "hub" (a metro area), ranked by
