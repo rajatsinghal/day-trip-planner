@@ -34,7 +34,11 @@ type WeatherMap = Record<string, WeatherResponse>;
 
 function App() {
   const dayOptions = useMemo(() => computeDayOptions(), []);
-  const [selectedDay, setSelectedDay] = useState(dayOptions[0].isoDate);
+  const [selectedDay, setSelectedDay] = useState(() => {
+    // After 8 PM local, most of today's daytime is gone — land on tomorrow.
+    const defaultIdx = new Date().getHours() >= 20 && dayOptions.length > 1 ? 1 : 0;
+    return dayOptions[defaultIdx].isoDate;
+  });
   const [weatherByDest, setWeatherByDest] = useState<WeatherMap>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
