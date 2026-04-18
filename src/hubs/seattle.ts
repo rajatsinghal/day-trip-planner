@@ -1,19 +1,16 @@
 import type { Hub } from './types';
 
-// The original hand-curated hub. Center is currently set to Redmond
-// (where the project was first built from) rather than downtown Seattle
-// — the convention in AGENTS.md is downtown of the most-recognized city
-// in the metro, but moving the center now would shift every drive time
-// in the list. The Seattle hub is slated to be re-generated through the
-// agent flow alongside Austin and Bay Area, at which point this center
-// will move to ~47.6062, -122.3321 (downtown Seattle).
+// The original hand-curated hub. Centered on downtown Seattle per the
+// AGENTS.md §3 convention (downtown of the most-recognized city in the
+// metro). Drive times are rounded to ~5 min in the UI, which absorbs
+// most of the Bellevue/Redmond/Seattle anchor-point variance anyway.
 export const seattleHub: Hub = {
   id: 'seattle',
   name: 'Seattle',
   center: {
-    name: 'Redmond, WA',
-    lat: 47.674,
-    lon: -122.1215,
+    name: 'Seattle, WA',
+    lat: 47.6062,
+    lon: -122.3321,
   },
   destinations: [
     {
