@@ -39,6 +39,7 @@ export function HourRangeSlider({
 
   return (
     <div className="flex items-center gap-2">
+      <span className="text-xs text-slate-500 whitespace-nowrap">Trip window</span>
       <div className="relative flex items-center h-6 w-40 select-none">
         <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-slate-200" />
         <div
@@ -53,7 +54,7 @@ export function HourRangeSlider({
           value={start}
           onChange={(e) => handleStart(parseInt(e.target.value, 10))}
           className="dtp-range"
-          aria-label="Window start hour"
+          aria-label="Trip window start hour"
         />
         <input
           type="range"
@@ -63,7 +64,7 @@ export function HourRangeSlider({
           value={end}
           onChange={(e) => handleEnd(parseInt(e.target.value, 10))}
           className="dtp-range"
-          aria-label="Window end hour"
+          aria-label="Trip window end hour"
         />
       </div>
       <span className="text-xs font-medium text-slate-700 whitespace-nowrap tabular-nums">
