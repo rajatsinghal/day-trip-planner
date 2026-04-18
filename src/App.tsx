@@ -267,9 +267,11 @@ function App() {
               href={REPO_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="absolute bottom-2 left-2 z-10 rounded-md border border-slate-200 bg-white/95 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-slate-900"
+              title="Built by Rajat Singhal — open source, contribute on GitHub"
+              aria-label="Built by Rajat Singhal. Contribute on GitHub."
+              className="absolute bottom-2 left-2 z-10 whitespace-nowrap rounded-md border border-slate-200 bg-white/95 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-slate-900"
             >
-              Built by Rajat Singhal · Contribute on GitHub ↗
+              <span aria-hidden>🔨</span> Rajat Singhal · Contribute ↗
             </a>
           )}
         </section>
