@@ -1,10 +1,8 @@
 # Day Trip Planner
 
-<!-- Badge URLs assume the repo is at github.com/REPLACE_ME/day-trip-planner.
-     Swap REPLACE_ME for your GitHub username (or org) after creating the repo. -->
-[![Stars](https://img.shields.io/github/stars/REPLACE_ME/day-trip-planner?style=flat-square)](https://github.com/REPLACE_ME/day-trip-planner/stargazers)
-[![Contributors](https://img.shields.io/github/contributors/REPLACE_ME/day-trip-planner?style=flat-square)](https://github.com/REPLACE_ME/day-trip-planner/graphs/contributors)
-[![License: MIT](https://img.shields.io/github/license/REPLACE_ME/day-trip-planner?style=flat-square)](./LICENSE)
+[![Stars](https://img.shields.io/github/stars/rajatsinghal/day-trip-planner?style=flat-square)](https://github.com/rajatsinghal/day-trip-planner/stargazers)
+[![Contributors](https://img.shields.io/github/contributors/rajatsinghal/day-trip-planner?style=flat-square)](https://github.com/rajatsinghal/day-trip-planner/graphs/contributors)
+[![License: MIT](https://img.shields.io/github/license/rajatsinghal/day-trip-planner?style=flat-square)](./LICENSE)
 
 Find nearby places where the weather is actually good.
 
