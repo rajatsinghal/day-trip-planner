@@ -41,7 +41,7 @@ export function ReasonFilter({ selected, onToggle, onClear, totalCount, matchCou
       })}
       <div className="ml-auto flex items-center gap-2 pl-2 text-xs text-slate-500 flex-shrink-0">
         <span className="tabular-nums">
-          {any ? `${matchCount} of ${totalCount}` : `${totalCount}`}
+          {any ? `${matchCount} of ${totalCount}` : `All ${totalCount}`}
         </span>
         {any && (
           <button
