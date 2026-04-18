@@ -64,13 +64,20 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
                 aria-hidden
               />
             )}
-            <button
-              type="button"
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => onSelect(row.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelect(row.id);
+                }
+              }}
               onMouseEnter={() => onHover(row.id)}
               onMouseLeave={() => onHover(null)}
               className={
-                'w-full text-left px-3 py-2.5 flex gap-3 items-start transition-colors ' +
+                'w-full text-left px-3 py-2.5 flex gap-3 items-start transition-colors cursor-pointer ' +
                 (isSelected ? 'bg-slate-200' : 'hover:bg-slate-50')
               }
             >
@@ -80,14 +87,45 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span
-                    className={
-                      'truncate ' +
-                      (isSelected ? 'font-semibold text-slate-900' : 'font-medium text-slate-900')
-                    }
-                  >
-                    {row.name}
-                  </span>
+                  <div className="flex items-baseline gap-1 min-w-0">
+                    <span
+                      className={
+                        'truncate ' +
+                        (isSelected ? 'font-semibold text-slate-900' : 'font-medium text-slate-900')
+                      }
+                    >
+                      {row.name}
+                    </span>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(row.name)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      title="Open in Google Maps"
+                      aria-label={`Open ${row.name} in Google Maps`}
+                      className={
+                        'flex-shrink-0 text-slate-500 transition-opacity hover:text-slate-900 focus:text-slate-900 focus:outline-none ' +
+                        (isSelected ? 'opacity-80 hover:opacity-100' : 'opacity-40 hover:opacity-100')
+                      }
+                    >
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <path d="M11 4h5v5" />
+                        <path d="M16 4l-8 8" />
+                        <path d="M14 12v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4" />
+                      </svg>
+                    </a>
+                  </div>
                   <span className="text-xs text-slate-500 flex-shrink-0">
                     {formatDriveTime(row.driveMinutes)}
                   </span>
@@ -110,7 +148,7 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
                   <div className="text-xs text-slate-400 mt-0.5">No forecast</div>
                 )}
               </div>
-            </button>
+            </div>
           </li>
         );
       })}
