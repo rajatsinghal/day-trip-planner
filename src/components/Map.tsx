@@ -14,7 +14,7 @@ interface Props {
 
 const BAND_HEX: Record<'great' | 'ok' | 'poor', string> = {
   great: '#10b981',
-  ok: '#f59e0b',
+  ok: '#0ea5e9',
   poor: '#94a3b8',
 };
 

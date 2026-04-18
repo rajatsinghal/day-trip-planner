@@ -15,13 +15,13 @@ interface Props {
 
 const BAND_COLOR: Record<'great' | 'ok' | 'poor', string> = {
   great: 'bg-emerald-500',
-  ok: 'bg-amber-400',
+  ok: 'bg-sky-500',
   poor: 'bg-slate-400',
 };
 
 const BAND_BAR: Record<'great' | 'ok' | 'poor', string> = {
   great: 'bg-emerald-500',
-  ok: 'bg-amber-500',
+  ok: 'bg-sky-500',
   poor: 'bg-slate-500',
 };
 
