@@ -176,7 +176,7 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
                   </div>
                   {visibleReasons.length > 0 && (
                     <div
-                      className="mt-0.5 flex items-center gap-1 text-sm"
+                      className="mt-0.5 flex items-center gap-1.5 text-sm"
                       aria-hidden
                     >
                       {visibleReasons.map((r) => (
