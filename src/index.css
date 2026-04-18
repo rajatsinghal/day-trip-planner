@@ -18,7 +18,9 @@ body {
 
 /* Dual-thumb range slider: two overlapping <input type="range"> with
  * transparent tracks so only the thumbs are interactive. The filled
- * track is painted by a sibling div in HourRangeSlider. */
+ * and unfilled track is painted by sibling divs in HourRangeSlider.
+ * Track height here matches the visible bar (4px) so thumbs can be
+ * vertically centered on it with a -5px top margin. */
 .dtp-range {
   position: absolute;
   inset: 0;
@@ -33,11 +35,13 @@ body {
 }
 .dtp-range::-webkit-slider-runnable-track {
   background: transparent;
-  height: 100%;
+  height: 4px;
+  border: none;
 }
 .dtp-range::-moz-range-track {
   background: transparent;
-  height: 100%;
+  height: 4px;
+  border: none;
 }
 .dtp-range::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -49,7 +53,7 @@ body {
   border: 2px solid #0f172a;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   cursor: grab;
-  margin-top: 0;
+  margin-top: -5px;
 }
 .dtp-range::-webkit-slider-thumb:active {
   cursor: grabbing;
