@@ -5,6 +5,7 @@ import { SideList } from './components/SideList';
 import { MapView } from './components/Map';
 import { computeDayOptions } from './lib/days';
 import { estimateDriveMinutes, haversineKm } from './lib/geo';
+import type { TempUnit } from './lib/units';
 import {
   fetchWeather,
   scoreBand,
@@ -12,6 +13,8 @@ import {
   type DailyWeather,
   type WeatherResponse,
 } from './lib/weather';
+
+const TEMP_UNIT_KEY = 'dtp.tempUnit';
 
 export interface EnrichedDestination extends Destination {
   driveMinutes: number;
@@ -30,6 +33,13 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [tempUnit, setTempUnit] = useState<TempUnit>(() => {
+    return localStorage.getItem(TEMP_UNIT_KEY) === 'F' ? 'F' : 'C';
+  });
+
+  useEffect(() => {
+    localStorage.setItem(TEMP_UNIT_KEY, tempUnit);
+  }, [tempUnit]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -87,7 +97,8 @@ function App() {
       if (a.score === null && b.score === null) return a.driveMinutes - b.driveMinutes;
       if (a.score === null) return 1;
       if (b.score === null) return -1;
-      return b.score - a.score;
+      if (b.score !== a.score) return b.score - a.score;
+      return a.driveMinutes - b.driveMinutes;
     });
     return enriched;
   }, [weatherByDest, selectedDay]);
@@ -101,6 +112,29 @@ function App() {
         </div>
         <div className="flex-1" />
         <DayChips options={dayOptions} selected={selectedDay} onSelect={setSelectedDay} />
+        <div
+          className="ml-1 flex overflow-hidden rounded-lg border border-slate-200 text-xs"
+          role="group"
+          aria-label="Temperature units"
+        >
+          {(['C', 'F'] as const).map((u) => {
+            const active = tempUnit === u;
+            return (
+              <button
+                key={u}
+                onClick={() => setTempUnit(u)}
+                className={
+                  'px-2 py-1 font-semibold transition-colors ' +
+                  (active
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-white text-slate-600 hover:bg-slate-100')
+                }
+              >
+                °{u}
+              </button>
+            );
+          })}
+        </div>
       </header>
 
       {error && (
@@ -117,6 +151,7 @@ function App() {
             onSelect={setSelectedId}
             onHover={setHoveredId}
             loading={loading}
+            tempUnit={tempUnit}
           />
         </aside>
         <section className="relative">
