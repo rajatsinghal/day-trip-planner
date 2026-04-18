@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { defaultHub, type Destination, type ReasonsToVisit } from './hubs';
+import { HUBS, HUBS_BY_ID, defaultHub, type Destination, type ReasonsToVisit } from './hubs';
 import { DayChips } from './components/DayChips';
 import { SideList } from './components/SideList';
 import { MapView } from './components/Map';
@@ -21,6 +21,8 @@ import { fetchNwsForDest } from './lib/nws';
 const TEMP_UNIT_KEY = 'dtp.tempUnit';
 const WINDOW_KEY = 'dtp.windowHours';
 const REASONS_KEY = 'dtp.selectedReasons';
+const HUB_KEY = 'dtp.selectedHub';
+const HUB_PARAM = 'hub';
 const FETCH_CONCURRENCY = 8;
 const WINDOW_MIN_HOUR = 4;
 const WINDOW_MAX_HOUR = 22;
@@ -41,6 +43,18 @@ export interface EnrichedDestination extends Destination {
 type WeatherMap = Record<string, WeatherResponse>;
 
 function App() {
+  // Hub selection: URL param wins, then localStorage, then default. Both URL
+  // and storage values are validated against HUBS_BY_ID so a stale slug
+  // (e.g. a hub that was renamed or removed) falls through to the default.
+  const [selectedHubId, setSelectedHubId] = useState<string>(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get(HUB_PARAM);
+    if (fromUrl && HUBS_BY_ID.has(fromUrl)) return fromUrl;
+    const fromStorage = localStorage.getItem(HUB_KEY);
+    if (fromStorage && HUBS_BY_ID.has(fromStorage)) return fromStorage;
+    return defaultHub.id;
+  });
+  const selectedHub = HUBS_BY_ID.get(selectedHubId) ?? defaultHub;
+
   const dayOptions = useMemo(() => computeDayOptions(), []);
   const [selectedDay, setSelectedDay] = useState(() => {
     // After 8 PM local, most of today's daytime is gone — land on tomorrow.
@@ -104,6 +118,15 @@ function App() {
     localStorage.setItem(REASONS_KEY, JSON.stringify(Array.from(selectedReasons)));
   }, [selectedReasons]);
 
+  useEffect(() => {
+    localStorage.setItem(HUB_KEY, selectedHubId);
+    // Mirror to the URL so the choice is shareable. replaceState (not push)
+    // keeps the back button from being polluted by hub switches.
+    const url = new URL(window.location.href);
+    url.searchParams.set(HUB_PARAM, selectedHubId);
+    window.history.replaceState({}, '', url);
+  }, [selectedHubId]);
+
   const toggleReason = (r: ReasonsToVisit) => {
     setSelectedReasons((prev) => {
       const next = new Set(prev);
@@ -120,12 +143,15 @@ function App() {
     let cancelled = false;
     setLoading(true);
     setError(null);
+    // Reset weather when the hub changes — the previous hub's data is for
+    // a different set of destinations and would briefly show in the list.
+    setWeatherByDest({});
 
     // Concurrency-limited worker pool. Each destination needs a two-step NWS
     // fetch, so we pull from a shared queue with N workers rather than firing
     // all 80+ at once. Results stream into state per-destination — the list
     // and map populate incrementally as each forecast lands.
-    const queue = [...defaultHub.destinations];
+    const queue = [...selectedHub.destinations];
     let successes = 0;
     let finishedWorkers = 0;
 
@@ -160,12 +186,12 @@ function App() {
       cancelled = true;
       controller.abort();
     };
-  }, []);
+  }, [selectedHub]);
 
   const rows: EnrichedDestination[] = useMemo(() => {
     const [startHour, endHour] = windowHours;
-    const enriched = defaultHub.destinations.map((d) => {
-      const distanceKm = haversineKm(defaultHub.center, d);
+    const enriched = selectedHub.destinations.map((d) => {
+      const distanceKm = haversineKm(selectedHub.center, d);
       const driveMinutes = estimateDriveMinutes(distanceKm);
       const wx = weatherByDest[d.id];
       const days = wx ? aggregateHourlyToDaily(wx.hourly, startHour, endHour) : null;
@@ -182,7 +208,7 @@ function App() {
       return a.driveMinutes - b.driveMinutes;
     });
     return enriched;
-  }, [weatherByDest, selectedDay, windowHours]);
+  }, [weatherByDest, selectedDay, windowHours, selectedHub]);
 
   const filteredRows = useMemo(() => {
     if (selectedReasons.size === 0) return rows;
@@ -194,7 +220,22 @@ function App() {
       <header className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-4 py-3">
         <div className="flex items-baseline gap-2">
           <h1 className="text-base font-semibold text-slate-900">Day Trip Planner</h1>
-          <span className="text-xs text-slate-500">from {defaultHub.center.name}</span>
+          <label className="flex items-baseline gap-1 text-xs text-slate-600">
+            <span className="sr-only">Area</span>
+            <select
+              value={selectedHubId}
+              onChange={(e) => setSelectedHubId(e.target.value)}
+              className="rounded border border-slate-300 bg-white px-1.5 py-0.5 text-xs font-medium text-slate-800 hover:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+              aria-label="Area"
+            >
+              {HUBS.map((h) => (
+                <option key={h.id} value={h.id}>
+                  Area: {h.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span className="text-xs text-slate-500">~drive from {selectedHub.center.name}</span>
         </div>
         <HourRangeSlider
           start={windowHours[0]}
@@ -257,8 +298,9 @@ function App() {
         </aside>
         <section className="relative">
           <MapView
+            key={selectedHub.id}
             rows={filteredRows}
-            center={defaultHub.center}
+            center={selectedHub.center}
             selectedId={selectedId}
             hoveredId={hoveredId}
             onSelect={setSelectedId}
