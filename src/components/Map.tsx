@@ -3,6 +3,7 @@ import maplibregl, { Map as MLMap, Marker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { EnrichedDestination } from '../App';
 import { ORIGIN } from '../data/destinations';
+import { weatherCodeToLabel } from '../lib/weather';
 
 interface Props {
   rows: EnrichedDestination[];
@@ -20,32 +21,55 @@ const BAND_HEX: Record<'great' | 'ok' | 'poor', string> = {
 // OpenFreeMap vector tiles — truly free, no API key.
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/positron';
 
-function makePinEl(color: string, selected: boolean): HTMLDivElement {
-  const el = document.createElement('div');
-  el.className = 'dtp-pin';
-  el.style.width = '18px';
-  el.style.height = '18px';
-  el.style.borderRadius = '50%';
-  el.style.background = color;
-  el.style.border = selected ? '3px solid #0f172a' : '2px solid white';
-  el.style.boxShadow = '0 1px 3px rgba(0,0,0,0.35)';
-  el.style.cursor = 'pointer';
-  el.style.transition = 'transform 150ms';
-  if (selected) el.style.transform = 'scale(1.25)';
-  return el;
+// Outer wrapper is positioned by MapLibre (don't touch its transform).
+// All styling / scaling happens on the inner element.
+function makePinEl(color: string, emoji: string, selected: boolean): HTMLDivElement {
+  const wrapper = document.createElement('div');
+
+  const inner = document.createElement('div');
+  inner.className = 'dtp-pin';
+  inner.style.width = '28px';
+  inner.style.height = '28px';
+  inner.style.borderRadius = '50%';
+  inner.style.background = color;
+  inner.style.border = selected ? '3px solid #0f172a' : '2px solid white';
+  inner.style.boxShadow = '0 1px 4px rgba(0,0,0,0.35)';
+  inner.style.display = 'flex';
+  inner.style.alignItems = 'center';
+  inner.style.justifyContent = 'center';
+  inner.style.fontSize = '15px';
+  inner.style.lineHeight = '1';
+  inner.style.cursor = 'pointer';
+  inner.style.transition = 'transform 150ms';
+  inner.textContent = emoji;
+  if (selected) inner.style.transform = 'scale(1.2)';
+
+  wrapper.appendChild(inner);
+  return wrapper;
+}
+
+function updatePinEl(wrapper: HTMLElement, color: string, emoji: string, selected: boolean) {
+  const inner = wrapper.firstElementChild as HTMLElement | null;
+  if (!inner) return;
+  inner.style.background = color;
+  inner.style.border = selected ? '3px solid #0f172a' : '2px solid white';
+  inner.style.transform = selected ? 'scale(1.2)' : 'scale(1)';
+  if (inner.textContent !== emoji) inner.textContent = emoji;
 }
 
 function makeOriginEl(): HTMLDivElement {
-  const el = document.createElement('div');
-  el.style.width = '24px';
-  el.style.height = '24px';
-  el.style.display = 'flex';
-  el.style.alignItems = 'center';
-  el.style.justifyContent = 'center';
-  el.style.fontSize = '20px';
-  el.textContent = '🏠';
-  el.title = ORIGIN.name;
-  return el;
+  const wrapper = document.createElement('div');
+  const inner = document.createElement('div');
+  inner.style.width = '26px';
+  inner.style.height = '26px';
+  inner.style.display = 'flex';
+  inner.style.alignItems = 'center';
+  inner.style.justifyContent = 'center';
+  inner.style.fontSize = '22px';
+  inner.textContent = '🏠';
+  inner.title = ORIGIN.name;
+  wrapper.appendChild(inner);
+  return wrapper;
 }
 
 export function MapView({ rows, selectedId, hoveredId, onSelect }: Props) {
@@ -89,14 +113,13 @@ export function MapView({ rows, selectedId, hoveredId, onSelect }: Props) {
 
     for (const row of rows) {
       const color = BAND_HEX[row.band ?? 'poor'];
+      const emoji = row.weather ? weatherCodeToLabel(row.weather.weatherCode).emoji : '·';
       const isSelected = row.id === selectedId || row.id === hoveredId;
       const existing = markersRef.current.get(row.id);
       if (existing) {
-        existing.getElement().style.background = color;
-        existing.getElement().style.border = isSelected ? '3px solid #0f172a' : '2px solid white';
-        existing.getElement().style.transform = isSelected ? 'scale(1.25)' : 'scale(1)';
+        updatePinEl(existing.getElement(), color, emoji, isSelected);
       } else {
-        const el = makePinEl(color, isSelected);
+        const el = makePinEl(color, emoji, isSelected);
         el.addEventListener('click', () => onSelect(row.id));
         const m = new maplibregl.Marker({ element: el })
           .setLngLat([row.lon, row.lat])

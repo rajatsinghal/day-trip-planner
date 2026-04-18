@@ -71,11 +71,6 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading }: Props
                   <div className="text-xs text-slate-400 mt-0.5">No forecast</div>
                 )}
               </div>
-              {row.score !== null && (
-                <span className="text-xs font-semibold text-slate-400 flex-shrink-0 pt-0.5">
-                  {row.score}
-                </span>
-              )}
             </button>
           </li>
         );

@@ -72,19 +72,47 @@ export async function fetchWeather(
   return { days, fetchedAt: Date.now() };
 }
 
-// Score 0-100. "Sunny & mild" = high temp in 18-28C, low rain, low wind, lots of sunshine.
+// Primary signal is the WMO weather code (what the sky actually looks like).
+// Temp / wind / high-precip probability are modifiers on top.
+function weatherCodeBaseScore(code: number): number {
+  if (code === 0) return 95; // Clear
+  if (code === 1) return 82; // Mainly clear
+  if (code === 2) return 62; // Partly cloudy
+  if (code === 3) return 38; // Overcast
+  if (code >= 45 && code <= 48) return 35; // Fog
+  if (code >= 51 && code <= 57) return 25; // Drizzle
+  if (code >= 61 && code <= 67) return 15; // Rain
+  if (code >= 71 && code <= 77) return 12; // Snow
+  if (code >= 80 && code <= 82) return 22; // Showers
+  if (code >= 85 && code <= 86) return 12; // Snow showers
+  if (code >= 95) return 5; // Thunderstorm
+  return 40;
+}
+
 export function scoreWeather(d: DailyWeather): number {
-  const tempScore = bell(d.tMaxC, 22, 6); // peaks at 22C, width 6C
-  const rainScore = clamp01(1 - d.precipProb / 100) * clamp01(1 - d.precipMm / 10);
-  const windScore = clamp01(1 - Math.max(0, d.windMaxKmh - 15) / 40); // penalize above 15 km/h
-  const sunScore = clamp01(d.sunshineHours / 9); // 9+ hrs of sun = max
-  const composite = 0.35 * tempScore + 0.3 * rainScore + 0.15 * windScore + 0.2 * sunScore;
-  return Math.round(composite * 100);
+  let score = weatherCodeBaseScore(d.weatherCode);
+
+  // Temperature: uncomfortable extremes drag the score down.
+  if (d.tMaxC < 2) score -= 25;
+  else if (d.tMaxC < 8) score -= 12;
+  else if (d.tMaxC < 13) score -= 4;
+  else if (d.tMaxC > 34) score -= 20;
+  else if (d.tMaxC > 30) score -= 8;
+
+  // Strong wind is miserable outdoors.
+  if (d.windMaxKmh > 45) score -= 12;
+  else if (d.windMaxKmh > 30) score -= 6;
+
+  // Sanity: a "partly cloudy" code with 90% rain probability isn't really pleasant.
+  if (d.precipProb >= 80) score -= 10;
+  else if (d.precipProb >= 60) score -= 4;
+
+  return Math.max(0, Math.min(100, Math.round(score)));
 }
 
 export function scoreBand(score: number): 'great' | 'ok' | 'poor' {
-  if (score >= 70) return 'great';
-  if (score >= 45) return 'ok';
+  if (score >= 72) return 'great';
+  if (score >= 48) return 'ok';
   return 'poor';
 }
 
@@ -103,11 +131,3 @@ export function weatherCodeToLabel(code: number): { emoji: string; label: string
   return { emoji: '❓', label: 'Unknown' };
 }
 
-function bell(x: number, center: number, width: number): number {
-  const z = (x - center) / width;
-  return Math.exp(-0.5 * z * z);
-}
-
-function clamp01(x: number): number {
-  return Math.max(0, Math.min(1, x));
-}
