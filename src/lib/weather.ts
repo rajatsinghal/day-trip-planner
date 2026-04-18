@@ -15,6 +15,7 @@ export interface HourlyWeather {
   precipitation: number[];
   wind_speed_10m: number[];
   weather_code: number[];
+  cloud_cover: number[];
 }
 
 export interface WeatherResponse {
@@ -34,7 +35,25 @@ const HOURLY_PARAMS = [
   'precipitation',
   'wind_speed_10m',
   'weather_code',
+  'cloud_cover',
 ].join(',');
+
+// Any code >= 45 is precipitation / fog / snow / thunder — these are "real"
+// weather events that should dominate the representative label regardless
+// of cloud cover.
+function isPrecipOrFogCode(code: number): boolean {
+  return code >= 45;
+}
+
+// Derive a cloud-only WMO code from average cloud cover %.
+// Thresholds chosen so 60-75% reads as "cloudy" — matching how most
+// people describe a sky vs. Open-Meteo's more lenient code-2 bucket.
+function cloudCoverToCode(pct: number): number {
+  if (pct >= 75) return 3; // overcast
+  if (pct >= 50) return 2; // partly cloudy
+  if (pct >= 20) return 1; // mainly clear
+  return 0; // clear
+}
 
 // Primary signal is the WMO weather code (what the sky actually looks like).
 // Temp / wind / high-precip probability are modifiers on top.
@@ -54,9 +73,13 @@ function weatherCodeBaseScore(code: number): number {
 }
 
 // Collapse hourly readings into one entry per calendar date, considering only
-// hours where startHour <= hour < endHour. The representative weather code is
-// the "worst" code seen inside the window so a pin's icon honestly surfaces
-// rain that falls during the trip.
+// hours where startHour <= hour < endHour.
+//
+// Representative weather code: if any hour in the window has precip / fog /
+// snow, pick the worst such hour (so a 3 PM shower doesn't hide behind an
+// otherwise sunny afternoon). Otherwise the code is derived from the window's
+// average cloud cover — Open-Meteo's cloud-only codes cluster around "partly
+// cloudy" even at 70%+ cloud, which reads too sunny in the UI.
 export function aggregateHourlyToDaily(
   hourly: HourlyWeather,
   startHour: number,
@@ -86,8 +109,10 @@ export function aggregateHourlyToDaily(
     let precipProbMax = 0;
     let precipSum = 0;
     let windMax = 0;
-    let worstCode = hourly.weather_code[idx[0]] ?? 0;
-    let worstScore = weatherCodeBaseScore(worstCode);
+    let cloudSum = 0;
+    let cloudCount = 0;
+    let worstPrecipCode: number | null = null;
+    let worstPrecipScore = 101;
 
     for (const i of idx) {
       const temp = hourly.temperature_2m[i];
@@ -98,13 +123,23 @@ export function aggregateHourlyToDaily(
       precipProbMax = Math.max(precipProbMax, hourly.precipitation_probability[i] ?? 0);
       precipSum += hourly.precipitation[i] ?? 0;
       windMax = Math.max(windMax, hourly.wind_speed_10m[i] ?? 0);
+      const cloud = hourly.cloud_cover?.[i];
+      if (typeof cloud === 'number') {
+        cloudSum += cloud;
+        cloudCount += 1;
+      }
       const code = hourly.weather_code[i] ?? 0;
-      const score = weatherCodeBaseScore(code);
-      if (score < worstScore) {
-        worstScore = score;
-        worstCode = code;
+      if (isPrecipOrFogCode(code)) {
+        const score = weatherCodeBaseScore(code);
+        if (score < worstPrecipScore) {
+          worstPrecipScore = score;
+          worstPrecipCode = code;
+        }
       }
     }
+
+    const avgCloud = cloudCount > 0 ? cloudSum / cloudCount : 0;
+    const repCode = worstPrecipCode ?? cloudCoverToCode(avgCloud);
 
     days.push({
       isoDate: date,
@@ -113,7 +148,7 @@ export function aggregateHourlyToDaily(
       precipProb: Math.round(precipProbMax),
       precipMm: Math.round(precipSum * 10) / 10,
       windMaxKmh: windMax,
-      weatherCode: worstCode,
+      weatherCode: repCode,
     });
   }
 
@@ -181,7 +216,8 @@ export function scoreBand(score: number): 'great' | 'ok' | 'poor' {
 // WMO weather code -> short label + emoji
 export function weatherCodeToLabel(code: number): { emoji: string; label: string } {
   if (code === 0) return { emoji: '☀️', label: 'Clear' };
-  if (code <= 2) return { emoji: '🌤️', label: 'Mostly sunny' };
+  if (code === 1) return { emoji: '🌤️', label: 'Mostly sunny' };
+  if (code === 2) return { emoji: '⛅', label: 'Partly cloudy' };
   if (code === 3) return { emoji: '☁️', label: 'Cloudy' };
   if (code >= 45 && code <= 48) return { emoji: '🌫️', label: 'Fog' };
   if (code >= 51 && code <= 57) return { emoji: '🌦️', label: 'Drizzle' };
