@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { ReasonsToVisit } from '../data/destinations';
+import type { ReasonsToVisit } from '../hubs';
 
 // Custom inline SVGs for a couple of reasons where no Unicode emoji is a
 // good fit. They size to 1em so they match the surrounding text-size class

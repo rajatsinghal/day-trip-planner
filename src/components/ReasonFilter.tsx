@@ -1,4 +1,4 @@
-import type { ReasonsToVisit } from '../data/destinations';
+import type { ReasonsToVisit } from '../hubs';
 import { REASON_META, REASON_ORDER } from '../lib/reasons_to_visit';
 
 interface Props {

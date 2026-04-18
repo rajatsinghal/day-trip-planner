@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DESTINATIONS, ORIGIN, type Destination, type ReasonsToVisit } from './data/destinations';
+import { defaultHub, type Destination, type ReasonsToVisit } from './hubs';
 import { DayChips } from './components/DayChips';
 import { SideList } from './components/SideList';
 import { MapView } from './components/Map';
@@ -125,7 +125,7 @@ function App() {
     // fetch, so we pull from a shared queue with N workers rather than firing
     // all 80+ at once. Results stream into state per-destination — the list
     // and map populate incrementally as each forecast lands.
-    const queue = [...DESTINATIONS];
+    const queue = [...defaultHub.destinations];
     let successes = 0;
     let finishedWorkers = 0;
 
@@ -164,8 +164,8 @@ function App() {
 
   const rows: EnrichedDestination[] = useMemo(() => {
     const [startHour, endHour] = windowHours;
-    const enriched = DESTINATIONS.map((d) => {
-      const distanceKm = haversineKm(ORIGIN, d);
+    const enriched = defaultHub.destinations.map((d) => {
+      const distanceKm = haversineKm(defaultHub.center, d);
       const driveMinutes = estimateDriveMinutes(distanceKm);
       const wx = weatherByDest[d.id];
       const days = wx ? aggregateHourlyToDaily(wx.hourly, startHour, endHour) : null;
@@ -194,7 +194,7 @@ function App() {
       <header className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-4 py-3">
         <div className="flex items-baseline gap-2">
           <h1 className="text-base font-semibold text-slate-900">Day Trip Planner</h1>
-          <span className="text-xs text-slate-500">from {ORIGIN.name}</span>
+          <span className="text-xs text-slate-500">from {defaultHub.center.name}</span>
         </div>
         <HourRangeSlider
           start={windowHours[0]}
@@ -258,6 +258,7 @@ function App() {
         <section className="relative">
           <MapView
             rows={filteredRows}
+            center={defaultHub.center}
             selectedId={selectedId}
             hoveredId={hoveredId}
             onSelect={setSelectedId}

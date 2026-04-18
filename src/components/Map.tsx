@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import maplibregl, { Map as MLMap, Marker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { EnrichedDestination } from '../App';
-import { ORIGIN } from '../data/destinations';
 import { weatherCodeToLabel } from '../lib/weather';
 
 interface Props {
   rows: EnrichedDestination[];
+  center: { name: string; lat: number; lon: number };
   selectedId: string | null;
   hoveredId: string | null;
   onSelect: (id: string) => void;
@@ -73,7 +73,7 @@ function updatePinEl(wrapper: HTMLElement, emoji: string, bg: string, selected: 
   if (inner.textContent !== emoji) inner.textContent = emoji;
 }
 
-function makeOriginEl(): HTMLDivElement {
+function makeOriginEl(name: string): HTMLDivElement {
   const wrapper = document.createElement('div');
   const inner = document.createElement('div');
   inner.style.width = '26px';
@@ -83,29 +83,33 @@ function makeOriginEl(): HTMLDivElement {
   inner.style.justifyContent = 'center';
   inner.style.fontSize = '22px';
   inner.textContent = '🏠';
-  inner.title = ORIGIN.name;
+  inner.title = name;
   wrapper.appendChild(inner);
   return wrapper;
 }
 
-export function MapView({ rows, selectedId, hoveredId, onSelect }: Props) {
+export function MapView({ rows, center, selectedId, hoveredId, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const markersRef = useRef<Map<string, Marker>>(new Map());
 
+  // Initial mount only — captures the center at mount time. When the area
+  // picker (item #4) lets users switch hubs, the map will need a separate
+  // effect to fly to the new center; the home marker will also need to be
+  // remade. For now (single hub) this is the right shape.
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: STYLE_URL,
-      center: [ORIGIN.lon, ORIGIN.lat],
+      center: [center.lon, center.lat],
       zoom: 7.2,
       attributionControl: { compact: true },
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
-    new maplibregl.Marker({ element: makeOriginEl() })
-      .setLngLat([ORIGIN.lon, ORIGIN.lat])
+    new maplibregl.Marker({ element: makeOriginEl(center.name) })
+      .setLngLat([center.lon, center.lat])
       .addTo(map);
 
     mapRef.current = map;
