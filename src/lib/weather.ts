@@ -40,9 +40,15 @@ function weatherCodeBaseScore(code: number): number {
 }
 
 // Collapse hourly readings into one entry per calendar date, considering only
-// hours where startHour <= hour < endHour. Representative code is the worst
-// (lowest-scoring) code seen in the window — so a 3 PM shower or cloudy
-// stretch shows through rather than hiding behind surrounding sunny hours.
+// hours where startHour <= hour < endHour.
+//
+// Representative weather code:
+// - Precip / fog / snow / thunder (code >= 45): worst hour wins. A single
+//   rainy hour in the window dominates, so trip-relevant weather events are
+//   never hidden.
+// - Cloud-only hours (0-3): pick the MODE (most common code). Ties break
+//   toward the worse code. Matches how a human describes the sky — 5 sunny
+//   hours + 1 cloudy hour reads as "mostly sunny", not "cloudy".
 export function aggregateHourlyToDaily(
   hourly: HourlyWeather,
   startHour: number,
@@ -72,8 +78,8 @@ export function aggregateHourlyToDaily(
     let precipProbMax = 0;
     let precipSum = 0;
     let windMax = 0;
-    let worstCode = hourly.weather_code[idx[0]] ?? 0;
-    let worstScore = weatherCodeBaseScore(worstCode);
+    let worstPrecipCode: number | null = null;
+    const cloudCounts = new Map<number, number>();
 
     for (const i of idx) {
       const temp = hourly.temperature_2m[i];
@@ -85,10 +91,35 @@ export function aggregateHourlyToDaily(
       precipSum += hourly.precipitation[i] ?? 0;
       windMax = Math.max(windMax, hourly.wind_speed_10m[i] ?? 0);
       const code = hourly.weather_code[i] ?? 0;
-      const score = weatherCodeBaseScore(code);
-      if (score < worstScore) {
-        worstScore = score;
-        worstCode = code;
+      if (code >= 45) {
+        if (
+          worstPrecipCode === null ||
+          weatherCodeBaseScore(code) < weatherCodeBaseScore(worstPrecipCode)
+        ) {
+          worstPrecipCode = code;
+        }
+      } else {
+        cloudCounts.set(code, (cloudCounts.get(code) ?? 0) + 1);
+      }
+    }
+
+    let repCode: number;
+    if (worstPrecipCode !== null) {
+      repCode = worstPrecipCode;
+    } else {
+      // Mode of cloud codes; on count tie, prefer the code with the lower
+      // base score (the worse one). The order we visit Map entries doesn't
+      // matter — the tie-break always lands on the same code.
+      repCode = 0;
+      let bestCount = -1;
+      for (const [code, count] of cloudCounts) {
+        const better =
+          count > bestCount ||
+          (count === bestCount && weatherCodeBaseScore(code) < weatherCodeBaseScore(repCode));
+        if (better) {
+          repCode = code;
+          bestCount = count;
+        }
       }
     }
 
@@ -99,7 +130,7 @@ export function aggregateHourlyToDaily(
       precipProb: Math.round(precipProbMax),
       precipMm: Math.round(precipSum * 10) / 10,
       windMaxKmh: windMax,
-      weatherCode: worstCode,
+      weatherCode: repCode,
     });
   }
 
