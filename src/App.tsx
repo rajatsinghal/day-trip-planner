@@ -26,6 +26,8 @@ const WINDOW_MIN_HOUR = 4;
 const WINDOW_MAX_HOUR = 22;
 const DEFAULT_WINDOW: [number, number] = [10, 16];
 const VALID_REASONS = new Set<ReasonsToVisit>(REASON_ORDER);
+// TODO: replace once the repo is pushed to GitHub.
+const REPO_URL = 'https://github.com/REPLACE_ME/day-trip-planner';
 
 export interface EnrichedDestination extends Destination {
   driveMinutes: number;
@@ -258,6 +260,14 @@ function App() {
             hoveredId={hoveredId}
             onSelect={setSelectedId}
           />
+          <a
+            href={REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute bottom-2 left-2 z-10 rounded-md border border-slate-200 bg-white/95 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-slate-900"
+          >
+            Built by Rajat Singhal · Contribute on GitHub ↗
+          </a>
         </section>
       </main>
     </div>
