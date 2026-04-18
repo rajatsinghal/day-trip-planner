@@ -23,21 +23,6 @@ export interface WeatherResponse {
   fetchedAt: number;
 }
 
-interface OpenMeteoLocation {
-  hourly: HourlyWeather;
-}
-
-const ENDPOINT = 'https://api.open-meteo.com/v1/forecast';
-
-const HOURLY_PARAMS = [
-  'temperature_2m',
-  'precipitation_probability',
-  'precipitation',
-  'wind_speed_10m',
-  'weather_code',
-  'cloud_cover',
-].join(',');
-
 // Any code >= 45 is precipitation / fog / snow / thunder — these are "real"
 // weather events that should dominate the representative label regardless
 // of cloud cover.
@@ -153,37 +138,6 @@ export function aggregateHourlyToDaily(
   }
 
   return days;
-}
-
-function parseLocation(loc: OpenMeteoLocation): WeatherResponse {
-  return { hourly: loc.hourly, fetchedAt: Date.now() };
-}
-
-// Open-Meteo accepts comma-separated lat/lon lists in a single request.
-// Single-location responses return an object; multi-location responses
-// return an array. We normalize both to an array.
-export async function fetchWeatherBatch(
-  coords: { lat: number; lon: number }[],
-  signal?: AbortSignal,
-): Promise<WeatherResponse[]> {
-  if (coords.length === 0) return [];
-
-  const params = new URLSearchParams({
-    latitude: coords.map((c) => c.lat.toFixed(4)).join(','),
-    longitude: coords.map((c) => c.lon.toFixed(4)).join(','),
-    hourly: HOURLY_PARAMS,
-    timezone: 'auto',
-    forecast_days: '10',
-    temperature_unit: 'celsius',
-    wind_speed_unit: 'kmh',
-    precipitation_unit: 'mm',
-  });
-
-  const res = await fetch(`${ENDPOINT}?${params}`, { signal });
-  if (!res.ok) throw new Error(`Weather fetch failed: ${res.status}`);
-  const json = (await res.json()) as OpenMeteoLocation | OpenMeteoLocation[];
-  const list = Array.isArray(json) ? json : [json];
-  return list.map(parseLocation);
 }
 
 export function scoreWeather(d: DailyWeather): number {

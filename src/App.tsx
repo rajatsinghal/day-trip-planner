@@ -9,16 +9,16 @@ import { estimateDriveMinutes, haversineKm } from './lib/geo';
 import type { TempUnit } from './lib/units';
 import {
   aggregateHourlyToDaily,
-  fetchWeatherBatch,
   scoreBand,
   scoreWeather,
   type DailyWeather,
   type WeatherResponse,
 } from './lib/weather';
+import { fetchNwsForDest } from './lib/nws';
 
 const TEMP_UNIT_KEY = 'dtp.tempUnit';
 const WINDOW_KEY = 'dtp.windowHours';
-const WEATHER_BATCH_SIZE = 10;
+const FETCH_CONCURRENCY = 8;
 const WINDOW_MIN_HOUR = 4;
 const WINDOW_MAX_HOUR = 22;
 const DEFAULT_WINDOW: [number, number] = [10, 16];
@@ -80,50 +80,40 @@ function App() {
     setLoading(true);
     setError(null);
 
-    // Batch destinations 10-at-a-time and call Open-Meteo's multi-coord endpoint.
-    // Results stream in per batch so the UI can render the first rows while the
-    // rest are still in flight.
-    const batches: (typeof DESTINATIONS)[] = [];
-    for (let i = 0; i < DESTINATIONS.length; i += WEATHER_BATCH_SIZE) {
-      batches.push(DESTINATIONS.slice(i, i + WEATHER_BATCH_SIZE));
-    }
-
+    // Concurrency-limited worker pool. Each destination needs a two-step NWS
+    // fetch, so we pull from a shared queue with N workers rather than firing
+    // all 80+ at once. Results stream into state per-destination — the list
+    // and map populate incrementally as each forecast lands.
+    const queue = [...DESTINATIONS];
     let successes = 0;
-    const jobs = batches.map(async (batch) => {
-      try {
-        const responses = await fetchWeatherBatch(
-          batch.map((d) => ({ lat: d.lat, lon: d.lon })),
-          controller.signal,
-        );
-        if (cancelled) return;
-        successes += 1;
-        setWeatherByDest((prev) => {
-          const next = { ...prev };
-          responses.forEach((wx, idx) => {
-            const dest = batch[idx];
-            if (dest) next[dest.id] = wx;
-          });
-          return next;
-        });
-      } catch (e) {
-        if ((e as Error).name === 'AbortError') throw e;
-        console.warn('Weather batch failed:', e);
-      }
-    });
+    let finishedWorkers = 0;
 
-    Promise.all(jobs)
-      .then(() => {
-        if (cancelled) return;
+    async function worker() {
+      while (queue.length > 0 && !controller.signal.aborted) {
+        const dest = queue.shift();
+        if (!dest) break;
+        try {
+          const wx = await fetchNwsForDest(dest, controller.signal);
+          if (cancelled) return;
+          successes += 1;
+          setWeatherByDest((prev) => ({ ...prev, [dest.id]: wx }));
+        } catch (e) {
+          if ((e as Error).name === 'AbortError') return;
+          console.warn(`NWS fetch failed for ${dest.id}:`, e);
+        }
+      }
+      finishedWorkers += 1;
+      if (finishedWorkers === FETCH_CONCURRENCY && !cancelled) {
         setLoading(false);
         if (successes === 0) {
           setError('Could not load weather data. Check your internet connection.');
         }
-      })
-      .catch((e) => {
-        if ((e as Error).name === 'AbortError') return;
-        setError((e as Error).message);
-        setLoading(false);
-      });
+      }
+    }
+
+    for (let i = 0; i < FETCH_CONCURRENCY; i++) {
+      worker();
+    }
 
     return () => {
       cancelled = true;
