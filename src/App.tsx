@@ -3,10 +3,12 @@ import { DESTINATIONS, ORIGIN, type Destination } from './data/destinations';
 import { DayChips } from './components/DayChips';
 import { SideList } from './components/SideList';
 import { MapView } from './components/Map';
+import { HourRangeSlider } from './components/HourRangeSlider';
 import { computeDayOptions } from './lib/days';
 import { estimateDriveMinutes, haversineKm } from './lib/geo';
 import type { TempUnit } from './lib/units';
 import {
+  aggregateHourlyToDaily,
   fetchWeatherBatch,
   scoreBand,
   scoreWeather,
@@ -15,7 +17,9 @@ import {
 } from './lib/weather';
 
 const TEMP_UNIT_KEY = 'dtp.tempUnit';
+const WINDOW_KEY = 'dtp.windowHours';
 const WEATHER_BATCH_SIZE = 10;
+const DEFAULT_WINDOW: [number, number] = [10, 16];
 
 export interface EnrichedDestination extends Destination {
   driveMinutes: number;
@@ -37,10 +41,36 @@ function App() {
   const [tempUnit, setTempUnit] = useState<TempUnit>(() => {
     return localStorage.getItem(TEMP_UNIT_KEY) === 'F' ? 'F' : 'C';
   });
+  const [windowHours, setWindowHours] = useState<[number, number]>(() => {
+    try {
+      const raw = localStorage.getItem(WINDOW_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (
+          Array.isArray(parsed) &&
+          parsed.length === 2 &&
+          typeof parsed[0] === 'number' &&
+          typeof parsed[1] === 'number' &&
+          parsed[0] >= 0 &&
+          parsed[1] <= 24 &&
+          parsed[0] < parsed[1]
+        ) {
+          return [parsed[0], parsed[1]];
+        }
+      }
+    } catch {
+      // fall through to default
+    }
+    return DEFAULT_WINDOW;
+  });
 
   useEffect(() => {
     localStorage.setItem(TEMP_UNIT_KEY, tempUnit);
   }, [tempUnit]);
+
+  useEffect(() => {
+    localStorage.setItem(WINDOW_KEY, JSON.stringify(windowHours));
+  }, [windowHours]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -100,11 +130,13 @@ function App() {
   }, []);
 
   const rows: EnrichedDestination[] = useMemo(() => {
+    const [startHour, endHour] = windowHours;
     const enriched = DESTINATIONS.map((d) => {
       const distanceKm = haversineKm(ORIGIN, d);
       const driveMinutes = estimateDriveMinutes(distanceKm);
       const wx = weatherByDest[d.id];
-      const day = wx?.days.find((x) => x.isoDate === selectedDay) ?? null;
+      const days = wx ? aggregateHourlyToDaily(wx.hourly, startHour, endHour) : null;
+      const day = days?.find((x) => x.isoDate === selectedDay) ?? null;
       const score = day ? scoreWeather(day) : null;
       const band = score !== null ? scoreBand(score) : null;
       return { ...d, driveMinutes, weather: day, score, band };
@@ -117,17 +149,20 @@ function App() {
       return a.driveMinutes - b.driveMinutes;
     });
     return enriched;
-  }, [weatherByDest, selectedDay]);
+  }, [weatherByDest, selectedDay, windowHours]);
 
   return (
     <div className="flex h-full flex-col bg-slate-50">
       <header className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-4 py-3">
         <div className="flex items-baseline gap-2">
           <h1 className="text-base font-semibold text-slate-900">Day Trip Planner</h1>
-          <span className="text-xs text-slate-500">
-            from {ORIGIN.name} · forecast 10 AM–4 PM
-          </span>
+          <span className="text-xs text-slate-500">from {ORIGIN.name}</span>
         </div>
+        <HourRangeSlider
+          start={windowHours[0]}
+          end={windowHours[1]}
+          onChange={(s, e) => setWindowHours([s, e])}
+        />
         <div className="flex-1" />
         <DayChips options={dayOptions} selected={selectedDay} onSelect={setSelectedDay} />
         <div

@@ -8,18 +8,7 @@ export interface DailyWeather {
   weatherCode: number; // WMO code
 }
 
-export interface WeatherResponse {
-  days: DailyWeather[];
-  fetchedAt: number;
-}
-
-// Day-trip window (local time at each destination).
-// Aggregations are computed over hours where DAY_TRIP_START <= hour < DAY_TRIP_END.
-// 10..16 exclusive = 10 AM through 3:59 PM, i.e. a "10-to-4" outing.
-export const DAY_TRIP_START = 10;
-export const DAY_TRIP_END = 16;
-
-interface OpenMeteoHourly {
+export interface HourlyWeather {
   time: string[];
   temperature_2m: number[];
   precipitation_probability: number[];
@@ -28,8 +17,13 @@ interface OpenMeteoHourly {
   weather_code: number[];
 }
 
+export interface WeatherResponse {
+  hourly: HourlyWeather;
+  fetchedAt: number;
+}
+
 interface OpenMeteoLocation {
-  hourly: OpenMeteoHourly;
+  hourly: HourlyWeather;
 }
 
 const ENDPOINT = 'https://api.open-meteo.com/v1/forecast';
@@ -59,17 +53,22 @@ function weatherCodeBaseScore(code: number): number {
   return 40;
 }
 
-// Roll hourly readings up into one entry per calendar date, using only the
-// hours inside the day-trip window. Representative weather code is the "worst"
-// code observed in the window — a 3 PM shower matters for a 10-to-4 trip.
-function aggregateHourlyToDaily(hourly: OpenMeteoHourly): DailyWeather[] {
+// Collapse hourly readings into one entry per calendar date, considering only
+// hours where startHour <= hour < endHour. The representative weather code is
+// the "worst" code seen inside the window so a pin's icon honestly surfaces
+// rain that falls during the trip.
+export function aggregateHourlyToDaily(
+  hourly: HourlyWeather,
+  startHour: number,
+  endHour: number,
+): DailyWeather[] {
   const byDay = new Map<string, number[]>();
 
   for (let i = 0; i < hourly.time.length; i++) {
     const t = hourly.time[i];
     const date = t.slice(0, 10);
     const hour = parseInt(t.slice(11, 13), 10);
-    if (hour >= DAY_TRIP_START && hour < DAY_TRIP_END) {
+    if (hour >= startHour && hour < endHour) {
       const arr = byDay.get(date) ?? [];
       arr.push(i);
       byDay.set(date, arr);
@@ -122,7 +121,7 @@ function aggregateHourlyToDaily(hourly: OpenMeteoHourly): DailyWeather[] {
 }
 
 function parseLocation(loc: OpenMeteoLocation): WeatherResponse {
-  return { days: aggregateHourlyToDaily(loc.hourly), fetchedAt: Date.now() };
+  return { hourly: loc.hourly, fetchedAt: Date.now() };
 }
 
 // Open-Meteo accepts comma-separated lat/lon lists in a single request.
