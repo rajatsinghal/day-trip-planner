@@ -19,6 +19,8 @@ import {
 const TEMP_UNIT_KEY = 'dtp.tempUnit';
 const WINDOW_KEY = 'dtp.windowHours';
 const WEATHER_BATCH_SIZE = 10;
+const WINDOW_MIN_HOUR = 4;
+const WINDOW_MAX_HOUR = 22;
 const DEFAULT_WINDOW: [number, number] = [10, 16];
 
 export interface EnrichedDestination extends Destination {
@@ -51,8 +53,8 @@ function App() {
           parsed.length === 2 &&
           typeof parsed[0] === 'number' &&
           typeof parsed[1] === 'number' &&
-          parsed[0] >= 0 &&
-          parsed[1] <= 24 &&
+          parsed[0] >= WINDOW_MIN_HOUR &&
+          parsed[1] <= WINDOW_MAX_HOUR &&
           parsed[0] < parsed[1]
         ) {
           return [parsed[0], parsed[1]];
@@ -161,6 +163,8 @@ function App() {
         <HourRangeSlider
           start={windowHours[0]}
           end={windowHours[1]}
+          min={WINDOW_MIN_HOUR}
+          max={WINDOW_MAX_HOUR}
           onChange={(s, e) => setWindowHours([s, e])}
         />
         <div className="flex-1" />
