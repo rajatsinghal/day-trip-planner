@@ -129,12 +129,12 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
                 onMouseEnter={() => scheduleHover(row)}
                 onMouseLeave={cancelHover}
                 className={
-                  'w-full text-left px-3 py-2.5 flex gap-3 items-start transition-colors cursor-pointer ' +
+                  'w-full text-left px-3 py-2.5 flex gap-3 items-baseline transition-colors cursor-pointer ' +
                   (isSelected ? 'bg-slate-200' : 'hover:bg-slate-50')
                 }
               >
                 <span
-                  className={'mt-1 h-2.5 w-2.5 rounded-full flex-shrink-0 ' + BAND_COLOR[band]}
+                  className={'h-2.5 w-2.5 rounded-full flex-shrink-0 ' + BAND_COLOR[band]}
                   aria-hidden
                 />
                 <div className="flex-1 min-w-0">
