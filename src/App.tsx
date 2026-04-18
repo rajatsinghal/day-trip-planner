@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DESTINATIONS, ORIGIN, type Destination, type Reason } from './data/destinations';
+import { DESTINATIONS, ORIGIN, type Destination, type ReasonsToVisit } from './data/destinations';
 import { DayChips } from './components/DayChips';
 import { SideList } from './components/SideList';
 import { MapView } from './components/Map';
@@ -7,7 +7,7 @@ import { HourRangeSlider } from './components/HourRangeSlider';
 import { ReasonFilter } from './components/ReasonFilter';
 import { computeDayOptions } from './lib/days';
 import { estimateDriveMinutes, haversineKm } from './lib/geo';
-import { REASON_ORDER } from './lib/reasons';
+import { REASON_ORDER } from './lib/reasons_to_visit';
 import type { TempUnit } from './lib/units';
 import {
   aggregateHourlyToDaily,
@@ -25,7 +25,7 @@ const FETCH_CONCURRENCY = 8;
 const WINDOW_MIN_HOUR = 4;
 const WINDOW_MAX_HOUR = 22;
 const DEFAULT_WINDOW: [number, number] = [10, 16];
-const VALID_REASONS = new Set<Reason>(REASON_ORDER);
+const VALID_REASONS = new Set<ReasonsToVisit>(REASON_ORDER);
 
 export interface EnrichedDestination extends Destination {
   driveMinutes: number;
@@ -51,19 +51,19 @@ function App() {
   const [tempUnit, setTempUnit] = useState<TempUnit>(() => {
     return localStorage.getItem(TEMP_UNIT_KEY) === 'F' ? 'F' : 'C';
   });
-  const [selectedReasons, setSelectedReasons] = useState<Set<Reason>>(() => {
+  const [selectedReasons, setSelectedReasons] = useState<Set<ReasonsToVisit>>(() => {
     try {
       const raw = localStorage.getItem(REASONS_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          return new Set(parsed.filter((r): r is Reason => VALID_REASONS.has(r)));
+          return new Set(parsed.filter((r): r is ReasonsToVisit => VALID_REASONS.has(r)));
         }
       }
     } catch {
       // ignore
     }
-    return new Set<Reason>();
+    return new Set<ReasonsToVisit>();
   });
   const [windowHours, setWindowHours] = useState<[number, number]>(() => {
     try {
@@ -100,7 +100,7 @@ function App() {
     localStorage.setItem(REASONS_KEY, JSON.stringify(Array.from(selectedReasons)));
   }, [selectedReasons]);
 
-  const toggleReason = (r: Reason) => {
+  const toggleReason = (r: ReasonsToVisit) => {
     setSelectedReasons((prev) => {
       const next = new Set(prev);
       if (next.has(r)) next.delete(r);
@@ -182,7 +182,7 @@ function App() {
 
   const filteredRows = useMemo(() => {
     if (selectedReasons.size === 0) return rows;
-    return rows.filter((r) => r.reasons.some((x) => selectedReasons.has(x)));
+    return rows.filter((r) => r.reasons_to_visit.some((x) => selectedReasons.has(x)));
   }, [rows, selectedReasons]);
 
   return (

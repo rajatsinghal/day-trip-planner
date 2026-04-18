@@ -1,6 +1,6 @@
-import type { Reason } from '../data/destinations';
+import type { ReasonsToVisit } from '../data/destinations';
 
-export const REASON_META: Record<Reason, { emoji: string; label: string }> = {
+export const REASON_META: Record<ReasonsToVisit, { emoji: string; label: string }> = {
   lake: { emoji: '🏞', label: 'Lake' },
   waterfall: { emoji: '💦', label: 'Waterfall' },
   coast: { emoji: '🌊', label: 'Coast' },
@@ -22,7 +22,7 @@ export const REASON_META: Record<Reason, { emoji: string; label: string }> = {
 };
 
 // Order used by the filter bar. Excludes transitional legacy values.
-export const REASON_ORDER: Reason[] = [
+export const REASON_ORDER: ReasonsToVisit[] = [
   'lake',
   'waterfall',
   'coast',

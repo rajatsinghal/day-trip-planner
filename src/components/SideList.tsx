@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { EnrichedDestination } from '../App';
 import { formatDriveTime } from '../lib/geo';
-import { REASON_META } from '../lib/reasons';
+import { REASON_META } from '../lib/reasons_to_visit';
 import { formatTemp, formatWind, type TempUnit } from '../lib/units';
 import { weatherCodeToLabel } from '../lib/weather';
 
@@ -89,8 +89,8 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
           const band = row.band ?? 'poor';
           const wx = row.weather;
           const label = wx ? weatherCodeToLabel(wx.weatherCode) : null;
-          const visibleReasons = row.reasons.slice(0, 4);
-          const extraReasonCount = row.reasons.length - visibleReasons.length;
+          const visibleReasons = row.reasons_to_visit.slice(0, 4);
+          const extraReasonCount = row.reasons_to_visit.length - visibleReasons.length;
           return (
             <li
               key={row.id}
@@ -256,9 +256,9 @@ function HoverCard({ row, top, left, tempUnit }: HoverCardProps) {
         </div>
       )}
       <p className="mt-2 text-sm leading-snug text-slate-700">{row.blurb}</p>
-      {row.reasons.length > 0 && (
+      {row.reasons_to_visit.length > 0 && (
         <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {row.reasons.map((r) => (
+          {row.reasons_to_visit.map((r) => (
             <span
               key={r}
               className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700"

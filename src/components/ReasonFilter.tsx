@@ -1,9 +1,9 @@
-import type { Reason } from '../data/destinations';
-import { REASON_META, REASON_ORDER } from '../lib/reasons';
+import type { ReasonsToVisit } from '../data/destinations';
+import { REASON_META, REASON_ORDER } from '../lib/reasons_to_visit';
 
 interface Props {
-  selected: Set<Reason>;
-  onToggle: (r: Reason) => void;
+  selected: Set<ReasonsToVisit>;
+  onToggle: (r: ReasonsToVisit) => void;
   onClear: () => void;
   totalCount: number;
   matchCount: number;
@@ -11,7 +11,7 @@ interface Props {
 
 // Chip row under the header. If nothing is selected, every destination shows.
 // Clicking a chip toggles it; a destination is visible if it has any of the
-// currently-selected reasons.
+// currently-selected reasons_to_visit.
 export function ReasonFilter({ selected, onToggle, onClear, totalCount, matchCount }: Props) {
   const any = selected.size > 0;
   return (
