@@ -28,10 +28,7 @@ const WINDOW_MIN_HOUR = 4;
 const WINDOW_MAX_HOUR = 22;
 const DEFAULT_WINDOW: [number, number] = [10, 16];
 const VALID_REASONS = new Set<ReasonsToVisit>(REASON_ORDER);
-// Set VITE_REPO_URL in your build env (Cloudflare dashboard or .env.local)
-// to render the credit / contribute pill. If unset, the pill is hidden —
-// safer than shipping a placeholder URL that 404s on every click.
-const REPO_URL = import.meta.env.VITE_REPO_URL as string | undefined;
+const REPO_URL = 'https://github.com/rajatsinghal/day-trip-planner';
 
 export interface EnrichedDestination extends Destination {
   driveMinutes: number;
@@ -305,18 +302,16 @@ function App() {
             hoveredId={hoveredId}
             onSelect={setSelectedId}
           />
-          {REPO_URL && (
-            <a
-              href={REPO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Built by Rajat Singhal — open source, contribute on GitHub"
-              aria-label="Built by Rajat Singhal. Contribute on GitHub."
-              className="absolute bottom-2 left-2 z-10 whitespace-nowrap rounded-md border border-slate-200 bg-white/95 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-slate-900"
-            >
-              <span aria-hidden>🔨</span> Rajat Singhal · Contribute ↗
-            </a>
-          )}
+          <a
+            href={REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Built by Rajat Singhal — open source, contribute on GitHub"
+            aria-label="Built by Rajat Singhal. Contribute on GitHub."
+            className="absolute bottom-2 left-2 z-10 whitespace-nowrap rounded-md border border-slate-200 bg-white/95 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-slate-900"
+          >
+            <span aria-hidden>🔨</span> Rajat Singhal · Contribute ↗
+          </a>
         </section>
       </main>
     </div>

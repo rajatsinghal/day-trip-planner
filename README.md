@@ -69,10 +69,6 @@ npm install
 npm run dev
 ```
 
-Optional: copy `.env.example` to `.env.local` and set `VITE_REPO_URL`
-to your repo URL — that's what makes the credit pill render in the
-map corner. Without it, the pill is hidden (no broken-link risk).
-
 Other useful scripts:
 
 ```bash
@@ -86,9 +82,7 @@ npm run build                 # production build into dist/
 1. Push the repo to GitHub.
 2. In the Cloudflare dashboard → Pages → connect the repo.
 3. Build command: `npm run build`. Build output directory: `dist`.
-4. Add an env var: `VITE_REPO_URL` = your repo URL (so the credit
-   pill renders in production).
-5. Push to `main`. Cloudflare builds and ships to
+4. Push to `main`. Cloudflare builds and ships to
    `https://<project>.pages.dev`. PR previews come for free.
 
 If you want a custom domain, Cloudflare's setup is one DNS record.
