@@ -121,7 +121,7 @@ for (const d of hub.destinations) {
 // Hub-wide warnings (don't fail, but flag for review)
 if (hub.destinations.length < MIN_DESTINATIONS_WARN) {
   warnings.push(
-    `Only ${hub.destinations.length} destinations — agents typically aim for 25–40. Did the research finish?`,
+    `Only ${hub.destinations.length} destinations — under the ${MIN_DESTINATIONS_WARN}-destination warning floor. AGENTS.md §5 targets 25–40; consider whether the research is complete.`,
   );
 }
 
