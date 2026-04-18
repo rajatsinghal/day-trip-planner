@@ -17,24 +17,28 @@ const strokeProps = {
   'aria-hidden': true,
 };
 
+// Arched cliff lip with three curving streams spilling into a wavy pool.
+// The curves (not straight lines) are the thing that reads as "water, not
+// table legs."
 const WaterfallIcon = (
   <svg {...strokeProps}>
-    <path d="M3 7 h18" />
-    <path d="M7 7 v10" />
-    <path d="M12 7 v10" />
-    <path d="M17 7 v10" />
-    <path d="M3 19 q2 -1 4 0 t4 0 t4 0 t4 0 t2 0" />
+    <path d="M2 8 Q 6 4 10 6 T 16 6 T 22 6" />
+    <path d="M7 7 Q 6.3 11 7.3 15 T 7 18" />
+    <path d="M12 6 Q 11.3 11 12.3 15 T 12 18" />
+    <path d="M17 6 Q 16.3 11 17.3 15 T 17 18" />
+    <path d="M3 20 Q 6 18 9 20 T 15 20 T 21 20" />
   </svg>
 );
 
+// Framed painting (mountain + sun) with a small plaque underneath — the
+// specifically "gallery / museum" cue, not just another classical building
+// silhouette (we already use 🏛 for `historic`).
 const MuseumIcon = (
   <svg {...strokeProps}>
-    <path d="M3 9 L12 3 L21 9" />
-    <path d="M3 9 h18" />
-    <path d="M7 9 v10" />
-    <path d="M12 9 v10" />
-    <path d="M17 9 v10" />
-    <path d="M3 19 h18" />
+    <rect x="3" y="4" width="18" height="12" rx="0.8" />
+    <path d="M5 13 L 9 8 L 12 11 L 16 7 L 19 13" />
+    <circle cx="16.5" cy="7" r="1.2" />
+    <rect x="8" y="18" width="8" height="2" rx="0.3" />
   </svg>
 );
 
