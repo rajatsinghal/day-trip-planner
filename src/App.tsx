@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DESTINATIONS, ORIGIN, type Destination } from './data/destinations';
+import { DESTINATIONS, ORIGIN, type Destination, type Reason } from './data/destinations';
 import { DayChips } from './components/DayChips';
 import { SideList } from './components/SideList';
 import { MapView } from './components/Map';
 import { HourRangeSlider } from './components/HourRangeSlider';
+import { ReasonFilter } from './components/ReasonFilter';
 import { computeDayOptions } from './lib/days';
 import { estimateDriveMinutes, haversineKm } from './lib/geo';
+import { REASON_ORDER } from './lib/reasons';
 import type { TempUnit } from './lib/units';
 import {
   aggregateHourlyToDaily,
@@ -18,10 +20,12 @@ import { fetchNwsForDest } from './lib/nws';
 
 const TEMP_UNIT_KEY = 'dtp.tempUnit';
 const WINDOW_KEY = 'dtp.windowHours';
+const REASONS_KEY = 'dtp.selectedReasons';
 const FETCH_CONCURRENCY = 8;
 const WINDOW_MIN_HOUR = 4;
 const WINDOW_MAX_HOUR = 22;
 const DEFAULT_WINDOW: [number, number] = [10, 16];
+const VALID_REASONS = new Set<Reason>(REASON_ORDER);
 
 export interface EnrichedDestination extends Destination {
   driveMinutes: number;
@@ -46,6 +50,20 @@ function App() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [tempUnit, setTempUnit] = useState<TempUnit>(() => {
     return localStorage.getItem(TEMP_UNIT_KEY) === 'F' ? 'F' : 'C';
+  });
+  const [selectedReasons, setSelectedReasons] = useState<Set<Reason>>(() => {
+    try {
+      const raw = localStorage.getItem(REASONS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return new Set(parsed.filter((r): r is Reason => VALID_REASONS.has(r)));
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return new Set<Reason>();
   });
   const [windowHours, setWindowHours] = useState<[number, number]>(() => {
     try {
@@ -77,6 +95,21 @@ function App() {
   useEffect(() => {
     localStorage.setItem(WINDOW_KEY, JSON.stringify(windowHours));
   }, [windowHours]);
+
+  useEffect(() => {
+    localStorage.setItem(REASONS_KEY, JSON.stringify(Array.from(selectedReasons)));
+  }, [selectedReasons]);
+
+  const toggleReason = (r: Reason) => {
+    setSelectedReasons((prev) => {
+      const next = new Set(prev);
+      if (next.has(r)) next.delete(r);
+      else next.add(r);
+      return next;
+    });
+  };
+
+  const clearReasons = () => setSelectedReasons(new Set());
 
   useEffect(() => {
     const controller = new AbortController();
@@ -147,6 +180,11 @@ function App() {
     return enriched;
   }, [weatherByDest, selectedDay, windowHours]);
 
+  const filteredRows = useMemo(() => {
+    if (selectedReasons.size === 0) return rows;
+    return rows.filter((r) => r.reasons.some((x) => selectedReasons.has(x)));
+  }, [rows, selectedReasons]);
+
   return (
     <div className="flex h-full flex-col bg-slate-50">
       <header className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-4 py-3">
@@ -188,6 +226,14 @@ function App() {
         </div>
       </header>
 
+      <ReasonFilter
+        selected={selectedReasons}
+        onToggle={toggleReason}
+        onClear={clearReasons}
+        totalCount={rows.length}
+        matchCount={filteredRows.length}
+      />
+
       {error && (
         <div className="bg-rose-50 border-b border-rose-200 px-4 py-2 text-sm text-rose-700">
           {error}
@@ -197,7 +243,7 @@ function App() {
       <main className="grid flex-1 min-h-0 grid-cols-1 md:grid-cols-[340px_1fr]">
         <aside className="overflow-y-auto border-r border-slate-200 bg-white">
           <SideList
-            rows={rows}
+            rows={filteredRows}
             selectedId={selectedId}
             onSelect={setSelectedId}
             onHover={setHoveredId}
@@ -207,7 +253,7 @@ function App() {
         </aside>
         <section className="relative">
           <MapView
-            rows={rows}
+            rows={filteredRows}
             selectedId={selectedId}
             hoveredId={hoveredId}
             onSelect={setSelectedId}

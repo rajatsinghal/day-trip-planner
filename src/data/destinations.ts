@@ -1,12 +1,22 @@
-export type DestinationCategory =
-  | 'mountain'
-  | 'waterfall'
+export type Reason =
   | 'lake'
+  | 'waterfall'
   | 'coast'
-  | 'town'
-  | 'forest'
+  | 'island'
   | 'volcano'
-  | 'island';
+  | 'viewpoint'
+  | 'wildlife'
+  | 'hike'
+  | 'paddle'
+  | 'fish'
+  | 'ski'
+  | 'town'
+  | 'historic'
+  | 'museum'
+  | 'garden'
+  | 'zoo'
+  | 'farm'
+  | 'picnic';
 
 export interface Destination {
   id: string;
@@ -14,7 +24,7 @@ export interface Destination {
   lat: number;
   lon: number;
   elevation_m?: number;
-  categories: DestinationCategory[];
+  reasons: Reason[];
   blurb: string;
 }
 
@@ -30,7 +40,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Snoqualmie Falls',
     lat: 47.5417,
     lon: -121.8377,
-    categories: ['waterfall'],
+    reasons: ['waterfall', 'viewpoint'],
     blurb: '268-ft waterfall with viewing platforms and a short trail.',
   },
   {
@@ -39,7 +49,7 @@ export const DESTINATIONS: Destination[] = [
     lat: 47.4876,
     lon: -121.7252,
     elevation_m: 1266,
-    categories: ['mountain'],
+    reasons: ['hike'],
     blurb: 'Iconic steep day hike; sweeping views of the Snoqualmie Valley.',
   },
   {
@@ -47,7 +57,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Rattlesnake Ledge',
     lat: 47.4338,
     lon: -121.7669,
-    categories: ['mountain', 'lake'],
+    reasons: ['hike', 'viewpoint'],
     blurb: 'Short hike to a cliffside ledge overlooking Rattlesnake Lake.',
   },
   {
@@ -56,7 +66,7 @@ export const DESTINATIONS: Destination[] = [
     lat: 47.4539,
     lon: -121.6728,
     elevation_m: 1464,
-    categories: ['mountain'],
+    reasons: ['hike'],
     blurb: 'Punishing but rewarding climb; old mailbox on the summit.',
   },
   {
@@ -64,7 +74,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Snow Lake (Snoqualmie Pass)',
     lat: 47.4451,
     lon: -121.4192,
-    categories: ['lake', 'mountain'],
+    reasons: ['hike', 'lake'],
     blurb: 'Alpine lake reached by a moderate hike off I-90.',
   },
   {
@@ -72,7 +82,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Franklin Falls',
     lat: 47.4135,
     lon: -121.443,
-    categories: ['waterfall', 'forest'],
+    reasons: ['waterfall', 'hike'],
     blurb: 'Family-friendly trail to a 70-ft waterfall.',
   },
   {
@@ -80,7 +90,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Wallace Falls State Park',
     lat: 47.8686,
     lon: -121.6784,
-    categories: ['waterfall', 'forest'],
+    reasons: ['waterfall', 'hike'],
     blurb: 'Three-tier waterfall hike near Gold Bar.',
   },
   {
@@ -88,7 +98,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Bainbridge Island',
     lat: 47.6262,
     lon: -122.5237,
-    categories: ['island', 'town', 'coast'],
+    reasons: ['island', 'town'],
     blurb: 'Ferry-accessed island with shops, parks, and Puget Sound views.',
   },
   {
@@ -96,7 +106,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Vashon Island',
     lat: 47.4475,
     lon: -122.4663,
-    categories: ['island', 'coast'],
+    reasons: ['island', 'farm'],
     blurb: 'Rural island vibe; farms, beaches, and a ferry ride.',
   },
   {
@@ -104,7 +114,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Gig Harbor',
     lat: 47.329,
     lon: -122.583,
-    categories: ['town', 'coast'],
+    reasons: ['town', 'coast'],
     blurb: 'Postcard harbor town; waterfront walks, boat rentals, cafes.',
   },
   {
@@ -113,7 +123,7 @@ export const DESTINATIONS: Destination[] = [
     lat: 46.7853,
     lon: -121.7359,
     elevation_m: 1647,
-    categories: ['mountain', 'volcano'],
+    reasons: ['volcano', 'viewpoint', 'hike'],
     blurb: 'Headline view of Rainier; wildflower meadows in July–August.',
   },
   {
@@ -122,7 +132,7 @@ export const DESTINATIONS: Destination[] = [
     lat: 46.9141,
     lon: -121.6423,
     elevation_m: 1950,
-    categories: ['mountain', 'volcano'],
+    reasons: ['volcano', 'viewpoint', 'hike'],
     blurb: 'Highest road-accessible point in the park; closed in winter.',
   },
   {
@@ -130,7 +140,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Leavenworth',
     lat: 47.5963,
     lon: -120.6615,
-    categories: ['town', 'mountain'],
+    reasons: ['town'],
     blurb: 'Bavarian-themed town in the Cascades; shopping and river walks.',
   },
   {
@@ -138,7 +148,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Lake Wenatchee State Park',
     lat: 47.8117,
     lon: -120.739,
-    categories: ['lake', 'forest'],
+    reasons: ['lake', 'paddle', 'picnic'],
     blurb: 'Glacier-fed lake with beach, swimming, and kayaking.',
   },
   {
@@ -146,7 +156,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Deception Pass State Park',
     lat: 48.4069,
     lon: -122.6483,
-    categories: ['coast', 'island'],
+    reasons: ['coast', 'viewpoint', 'hike'],
     blurb: 'Bridge walk, beaches, tide pools, and forest trails.',
   },
   {
@@ -154,7 +164,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Coupeville (Whidbey Is.)',
     lat: 48.2215,
     lon: -122.6874,
-    categories: ['town', 'coast', 'island'],
+    reasons: ['town', 'historic', 'island'],
     blurb: 'Historic waterfront village on Penn Cove; mussel lunches and galleries.',
   },
   {
@@ -162,7 +172,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Port Townsend',
     lat: 48.117,
     lon: -122.7606,
-    categories: ['town', 'coast'],
+    reasons: ['town', 'historic', 'coast'],
     blurb: 'Victorian seaport with galleries, bookshops, and bayfront dining.',
   },
   {
@@ -170,7 +180,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Port Gamble',
     lat: 47.8517,
     lon: -122.5819,
-    categories: ['town', 'coast'],
+    reasons: ['town', 'historic'],
     blurb: 'Preserved 19th-century mill town; tea house, general store, walking loop.',
   },
   {
@@ -178,7 +188,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Poulsbo',
     lat: 47.7323,
     lon: -122.6465,
-    categories: ['town', 'coast'],
+    reasons: ['town', 'coast'],
     blurb: '"Little Norway" — Sluys bakery, waterfront park, Viking shops.',
   },
   {
@@ -186,7 +196,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'La Conner',
     lat: 48.392,
     lon: -122.4963,
-    categories: ['town', 'coast'],
+    reasons: ['town'],
     blurb: 'Art town on the Swinomish Channel; great in tulip season.',
   },
   {
@@ -194,7 +204,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Skagit Valley (Mount Vernon)',
     lat: 48.4201,
     lon: -122.3346,
-    categories: ['town'],
+    reasons: ['garden', 'farm'],
     blurb: 'Tulip fields every April; farmland, roadside stands, festival gardens.',
   },
   {
@@ -202,7 +212,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Bellingham',
     lat: 48.7519,
     lon: -122.4787,
-    categories: ['town', 'coast'],
+    reasons: ['town'],
     blurb: 'College-town energy; Fairhaven district, bay trails, breweries.',
   },
   {
@@ -210,7 +220,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Birch Bay',
     lat: 48.921,
     lon: -122.753,
-    categories: ['coast'],
+    reasons: ['coast'],
     blurb: 'Wide shallow bay with a beachfront boardwalk and state park.',
   },
   {
@@ -219,7 +229,7 @@ export const DESTINATIONS: Destination[] = [
     lat: 47.9692,
     lon: -123.4972,
     elevation_m: 1598,
-    categories: ['mountain'],
+    reasons: ['viewpoint', 'hike', 'ski'],
     blurb: 'Alpine meadows, Olympic Mountain panoramas, snowshoeing in winter.',
   },
   {
@@ -227,7 +237,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Lake Crescent (Olympic National Park)',
     lat: 48.0614,
     lon: -123.8,
-    categories: ['lake', 'forest'],
+    reasons: ['lake', 'paddle', 'historic', 'hike'],
     blurb: 'Deep glacial lake with a historic lodge, kayak rentals, Marymere Falls trail.',
   },
   {
@@ -235,7 +245,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Sequim',
     lat: 48.0794,
     lon: -123.1007,
-    categories: ['town', 'coast'],
+    reasons: ['town', 'garden'],
     blurb: 'Rain-shadow town famous for lavender fields in July.',
   },
   {
@@ -244,7 +254,7 @@ export const DESTINATIONS: Destination[] = [
     lat: 48.8467,
     lon: -121.6923,
     elevation_m: 1554,
-    categories: ['mountain', 'volcano'],
+    reasons: ['viewpoint', 'volcano', 'hike'],
     blurb: 'End-of-road views of Mt Baker and Mt Shuksan; summer-only.',
   },
   {
@@ -252,7 +262,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Diablo Lake (North Cascades National Park)',
     lat: 48.7127,
     lon: -121.102,
-    categories: ['lake', 'mountain'],
+    reasons: ['viewpoint', 'lake'],
     blurb: 'Turquoise reservoir with a famous overlook on Hwy 20; boat tours in summer.',
   },
   {
@@ -260,7 +270,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Wenatchee',
     lat: 47.4235,
     lon: -120.3103,
-    categories: ['town'],
+    reasons: ['town', 'garden', 'farm'],
     blurb: 'Apple capital; Columbia River loop trail, Ohme Gardens, cider houses.',
   },
   {
@@ -268,7 +278,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Cle Elum',
     lat: 47.1954,
     lon: -120.9384,
-    categories: ['town', 'mountain'],
+    reasons: ['town'],
     blurb: 'Foothills town on I-90 with easy access to trails and rivers.',
   },
   {
@@ -276,7 +286,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Roslyn',
     lat: 47.2237,
     lon: -120.9945,
-    categories: ['town'],
+    reasons: ['town', 'historic'],
     blurb: 'Historic coal town; filming location for Northern Exposure, cafes and cemetery tour.',
   },
   {
@@ -284,7 +294,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Ellensburg',
     lat: 47.0013,
     lon: -120.5478,
-    categories: ['town'],
+    reasons: ['town', 'historic'],
     blurb: 'University town in Kittitas Valley; rodeo grounds and historic downtown.',
   },
   {
@@ -292,7 +302,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Anacortes',
     lat: 48.5129,
     lon: -122.6127,
-    categories: ['town', 'coast', 'island'],
+    reasons: ['town', 'coast', 'viewpoint'],
     blurb: 'Gateway to the San Juans; Washington Park drive, Mt Erie overlook, Cap Sante.',
   },
   {
@@ -301,7 +311,7 @@ export const DESTINATIONS: Destination[] = [
     lat: 46.9345,
     lon: -121.4751,
     elevation_m: 2136,
-    categories: ['mountain'],
+    reasons: ['ski', 'viewpoint', 'hike'],
     blurb: 'Summer gondola to a Rainier-facing peak; alpine hiking, winter skiing.',
   },
   {
@@ -310,7 +320,7 @@ export const DESTINATIONS: Destination[] = [
     lat: 46.275,
     lon: -122.217,
     elevation_m: 1280,
-    categories: ['volcano', 'mountain'],
+    reasons: ['volcano', 'viewpoint', 'museum', 'hike'],
     blurb: 'Observatory looking straight into the blast zone; trails to Loowit viewpoint.',
   },
   {
@@ -318,7 +328,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Lake Chelan (south end)',
     lat: 47.8414,
     lon: -120.028,
-    categories: ['lake', 'town'],
+    reasons: ['lake', 'town', 'fish', 'paddle'],
     blurb: 'Long deep lake with resorts, vineyards, beaches, Lady of the Lake boat tours.',
   },
   {
@@ -326,7 +336,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Icicle Creek (Leavenworth)',
     lat: 47.5493,
     lon: -120.7847,
-    categories: ['forest', 'mountain'],
+    reasons: ['hike'],
     blurb: 'Canyon road with trailheads for Colchuck Lake and The Enchantments.',
   },
   {
@@ -334,7 +344,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Teanaway Community Forest',
     lat: 47.2743,
     lon: -120.8727,
-    categories: ['forest', 'mountain'],
+    reasons: ['hike'],
     blurb: 'Open forest with meadows, creeks, and mountain biking.',
   },
   {
@@ -343,7 +353,7 @@ export const DESTINATIONS: Destination[] = [
     lat: 47.3925,
     lon: -121.3993,
     elevation_m: 921,
-    categories: ['mountain'],
+    reasons: ['ski', 'hike'],
     blurb: 'Year-round mountain stop; skiing, PCT access, alpine lakes nearby.',
   },
   {
@@ -351,7 +361,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Saltwater State Park',
     lat: 47.3742,
     lon: -122.3272,
-    categories: ['coast'],
+    reasons: ['coast', 'picnic'],
     blurb: 'Small saltwater beach park between Seattle and Tacoma; tidepools and picnics.',
   },
   {
@@ -359,7 +369,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Dash Point State Park',
     lat: 47.3203,
     lon: -122.4098,
-    categories: ['coast', 'forest'],
+    reasons: ['coast', 'picnic'],
     blurb: 'Sandy beach and forest trails on Puget Sound.',
   },
   {
@@ -367,7 +377,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Point Defiance Park (Tacoma)',
     lat: 47.3063,
     lon: -122.5207,
-    categories: ['coast', 'forest'],
+    reasons: ['zoo', 'coast', 'historic', 'garden', 'picnic'],
     blurb: 'Huge waterfront park; old-growth trails, beaches, Pagoda, rose garden, zoo.',
   },
   {
@@ -375,7 +385,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Federation Forest State Park',
     lat: 47.1563,
     lon: -121.688,
-    categories: ['forest'],
+    reasons: ['hike'],
     blurb: 'Ancient Douglas-fir grove on the White River; interpretive trails.',
   },
   {
@@ -383,7 +393,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Flaming Geyser State Park',
     lat: 47.2713,
     lon: -122.0344,
-    categories: ['forest'],
+    reasons: ['picnic', 'paddle'],
     blurb: 'Green River park; picnics, kayak launches, short trails.',
   },
   {
@@ -391,7 +401,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Kanaskat-Palmer State Park',
     lat: 47.3154,
     lon: -121.9008,
-    categories: ['forest'],
+    reasons: ['paddle', 'picnic'],
     blurb: 'Green River whitewater and old-growth campground.',
   },
   {
@@ -399,7 +409,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Lake Easton State Park',
     lat: 47.2449,
     lon: -121.1793,
-    categories: ['lake', 'forest'],
+    reasons: ['lake', 'picnic'],
     blurb: 'Swimming lake right off I-90 past Snoqualmie Pass.',
   },
   {
@@ -407,7 +417,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Larrabee State Park (Chuckanut Drive)',
     lat: 48.6478,
     lon: -122.4856,
-    categories: ['coast', 'forest'],
+    reasons: ['coast', 'hike'],
     blurb: "Scenic cliffs and tidepools on Washington's first state park.",
   },
   {
@@ -415,7 +425,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Rockport State Park',
     lat: 48.4901,
     lon: -121.5976,
-    categories: ['forest'],
+    reasons: ['hike'],
     blurb: 'Rare unlogged old-growth grove on the Skagit River.',
   },
   {
@@ -423,7 +433,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Fort Ebey State Park (Whidbey)',
     lat: 48.2234,
     lon: -122.7724,
-    categories: ['coast', 'island'],
+    reasons: ['coast', 'hike', 'historic'],
     blurb: 'Bluff trails and beach on the west side of Whidbey Island.',
   },
   {
@@ -431,7 +441,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Fort Worden State Park (Port Townsend)',
     lat: 48.133,
     lon: -122.7653,
-    categories: ['coast', 'town'],
+    reasons: ['historic', 'coast', 'museum'],
     blurb: 'Historic fort, lighthouse, beaches, and summer concerts.',
   },
   {
@@ -440,7 +450,7 @@ export const DESTINATIONS: Destination[] = [
     lat: 48.0703,
     lon: -121.8157,
     elevation_m: 1644,
-    categories: ['mountain'],
+    reasons: ['hike', 'viewpoint', 'historic'],
     blurb: 'Fire lookout hike with 360° Cascade and Sound views.',
   },
   {
@@ -448,7 +458,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Lake 22',
     lat: 48.0779,
     lon: -121.7437,
-    categories: ['lake', 'forest'],
+    reasons: ['hike', 'lake'],
     blurb: 'Cirque lake below Mt Pilchuck; classic Mountain Loop hike.',
   },
   {
@@ -456,7 +466,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Heather Lake',
     lat: 48.0833,
     lon: -121.7788,
-    categories: ['lake', 'forest'],
+    reasons: ['hike', 'lake'],
     blurb: 'Short family hike to an alpine lake in old-growth forest.',
   },
   {
@@ -464,7 +474,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Big Four Ice Caves Viewpoint',
     lat: 48.0608,
     lon: -121.5142,
-    categories: ['mountain', 'forest'],
+    reasons: ['hike', 'viewpoint'],
     blurb: 'Boardwalk to a glacier-fed meltwater field. View only — caves are unsafe.',
   },
   {
@@ -472,7 +482,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Lake Serene / Bridal Veil Falls',
     lat: 47.8069,
     lon: -121.5767,
-    categories: ['lake', 'waterfall'],
+    reasons: ['hike', 'lake', 'waterfall'],
     blurb: 'Steep hike past a 1300-ft waterfall to a blue alpine lake.',
   },
   {
@@ -480,7 +490,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Blanca Lake',
     lat: 47.9908,
     lon: -121.3411,
-    categories: ['lake', 'mountain'],
+    reasons: ['lake', 'hike'],
     blurb: 'Turquoise glacial lake; long brutal hike, spectacular payoff.',
   },
   {
@@ -488,7 +498,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Boulder River Trail',
     lat: 48.2598,
     lon: -121.7959,
-    categories: ['waterfall', 'forest'],
+    reasons: ['hike', 'waterfall'],
     blurb: 'Easy riverside path to twin falls in an old-growth rainforest.',
   },
   {
@@ -496,7 +506,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Oyster Dome (Chuckanut)',
     lat: 48.6019,
     lon: -122.4358,
-    categories: ['mountain', 'coast'],
+    reasons: ['hike', 'viewpoint'],
     blurb: 'Sandstone ridge with views over Samish Bay and San Juans.',
   },
   {
@@ -505,7 +515,7 @@ export const DESTINATIONS: Destination[] = [
     lat: 46.8703,
     lon: -121.5192,
     elevation_m: 1640,
-    categories: ['lake', 'mountain'],
+    reasons: ['viewpoint', 'lake'],
     blurb: 'Roadside alpine lake with Rainier reflection; summer-only road.',
   },
   {
@@ -514,7 +524,7 @@ export const DESTINATIONS: Destination[] = [
     lat: 46.937,
     lon: -121.8657,
     elevation_m: 1676,
-    categories: ['mountain'],
+    reasons: ['hike', 'viewpoint', 'historic'],
     blurb: 'Fire lookout hike from Mowich Lake; rough gravel access road.',
   },
   {
@@ -522,7 +532,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Naches Peak Loop',
     lat: 46.8672,
     lon: -121.5227,
-    categories: ['mountain'],
+    reasons: ['hike', 'viewpoint'],
     blurb: 'Easy alpine loop on the PCT with Rainier front-row seating.',
   },
   {
@@ -530,7 +540,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Lake Cushman',
     lat: 47.446,
     lon: -123.2085,
-    categories: ['lake', 'forest'],
+    reasons: ['lake', 'paddle', 'fish'],
     blurb: 'Deep lake at the foot of the Olympic Mountains; beaches and boat launches.',
   },
   {
@@ -538,7 +548,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Kachess Lake',
     lat: 47.2828,
     lon: -121.2566,
-    categories: ['lake'],
+    reasons: ['lake', 'paddle', 'fish'],
     blurb: 'Large Cascade reservoir; swimming, boating, lakeside camp.',
   },
   {
@@ -546,7 +556,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Cooper Lake (Salmon La Sac)',
     lat: 47.4167,
     lon: -121.1833,
-    categories: ['lake', 'mountain'],
+    reasons: ['lake', 'paddle'],
     blurb: 'Quiet forested lake beyond Cle Elum Lake; trailheads for Pete Lake.',
   },
   {
@@ -554,7 +564,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Cle Elum Lake',
     lat: 47.2789,
     lon: -121.0736,
-    categories: ['lake'],
+    reasons: ['lake', 'paddle'],
     blurb: 'Long reservoir with pebble beaches and paddleboarding.',
   },
   {
@@ -562,7 +572,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Dungeness Spit (Wildlife Refuge)',
     lat: 48.1464,
     lon: -123.1886,
-    categories: ['coast'],
+    reasons: ['wildlife', 'coast', 'historic'],
     blurb: "World's longest natural sand spit; birding and a lighthouse at the tip.",
   },
   {
@@ -570,7 +580,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Point No Point Lighthouse',
     lat: 47.9131,
     lon: -122.5285,
-    categories: ['coast'],
+    reasons: ['coast', 'historic'],
     blurb: 'Working lighthouse and wide pebble beach on the Kitsap Peninsula.',
   },
   {
@@ -578,7 +588,7 @@ export const DESTINATIONS: Destination[] = [
     name: "Ebey's Landing (Whidbey)",
     lat: 48.1895,
     lon: -122.6816,
-    categories: ['coast', 'island'],
+    reasons: ['hike', 'coast', 'historic'],
     blurb: 'Prairie-to-bluff loop along Whidbey Island farmland and sea cliffs.',
   },
   {
@@ -586,7 +596,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Snohomish',
     lat: 47.9129,
     lon: -122.0982,
-    categories: ['town'],
+    reasons: ['town'],
     blurb: 'Antique-shop row in a small riverside downtown; 400+ dealers in three blocks.',
   },
   {
@@ -594,7 +604,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Langley (Whidbey Is.)',
     lat: 48.0395,
     lon: -122.4078,
-    categories: ['town', 'island', 'coast'],
+    reasons: ['town', 'island', 'wildlife'],
     blurb: 'Bluff-top village with galleries, bookshops, and whale watching.',
   },
   {
@@ -603,7 +613,7 @@ export const DESTINATIONS: Destination[] = [
     lat: 47.7462,
     lon: -121.0857,
     elevation_m: 1238,
-    categories: ['mountain'],
+    reasons: ['ski'],
     blurb: 'Cascade crest pass; winter skiing, summer mountain biking.',
   },
   {
@@ -611,7 +621,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Twin Falls (North Bend)',
     lat: 47.4536,
     lon: -121.7133,
-    categories: ['waterfall', 'forest'],
+    reasons: ['hike', 'waterfall'],
     blurb: 'Easy forest hike to a 150-ft waterfall along the South Fork Snoqualmie.',
   },
   {
@@ -619,7 +629,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Yakima',
     lat: 46.6021,
     lon: -120.5059,
-    categories: ['town'],
+    reasons: ['town'],
     blurb: 'Rain-shadow city in WA wine country; ~300 sunny days a year, tasting rooms, riverfront.',
   },
   {
@@ -627,7 +637,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Yakima River Canyon (Umtanum)',
     lat: 46.8509,
     lon: -120.4812,
-    categories: ['forest'],
+    reasons: ['paddle', 'hike', 'wildlife'],
     blurb: 'Basalt canyon drive; suspension bridge and desert-river hikes.',
   },
   {
@@ -635,7 +645,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Ginkgo Petrified Forest State Park (Vantage)',
     lat: 46.9481,
     lon: -119.9928,
-    categories: ['forest'],
+    reasons: ['historic', 'museum', 'hike'],
     blurb: 'Columbia River shoreline, petrified wood trails, and basalt cliffs.',
   },
   {
@@ -643,7 +653,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Cowiche Canyon',
     lat: 46.6285,
     lon: -120.5793,
-    categories: ['forest'],
+    reasons: ['hike'],
     blurb: 'Rail-trail through basalt walls just outside Yakima; shrub-steppe.',
   },
   {
@@ -651,7 +661,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Oak Creek Wildlife Area',
     lat: 46.7213,
     lon: -120.8197,
-    categories: ['forest'],
+    reasons: ['wildlife'],
     blurb: 'Bighorn sheep country; elk feeding station in winter.',
   },
   {
@@ -660,7 +670,7 @@ export const DESTINATIONS: Destination[] = [
     lat: 46.6368,
     lon: -121.3935,
     elevation_m: 1372,
-    categories: ['mountain'],
+    reasons: ['ski', 'hike'],
     blurb: 'Cascade pass south of Rainier; ski area in winter, PCT in summer.',
   },
   {
@@ -668,7 +678,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Forks of the Sky State Park (Index)',
     lat: 47.8156,
     lon: -121.5594,
-    categories: ['mountain', 'forest'],
+    reasons: ['historic', 'viewpoint'],
     blurb: "Granite climbing walls above the Skykomish's north fork confluence; the town of Index sits in its shadow.",
   },
   {
@@ -676,7 +686,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Twanoh State Park',
     lat: 47.3745,
     lon: -122.9726,
-    categories: ['coast', 'forest'],
+    reasons: ['coast', 'picnic', 'paddle'],
     blurb: 'Warm Hood Canal beach with madrona forest; oysters, kayak launch, horseshoes.',
   },
   {
@@ -684,7 +694,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Penrose Point State Park',
     lat: 47.2615,
     lon: -122.7475,
-    categories: ['coast', 'forest'],
+    reasons: ['coast', 'picnic'],
     blurb: 'Tidepools at low tide; forested Key Peninsula trails and a sheltered cove.',
   },
   {
@@ -692,7 +702,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'South Whidbey State Park',
     lat: 48.0375,
     lon: -122.5545,
-    categories: ['coast', 'forest', 'island'],
+    reasons: ['hike', 'coast', 'island'],
     blurb: 'Old-growth loop trails and stairs down a 300-ft Puget Sound bluff to the beach.',
   },
   {
@@ -700,7 +710,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Sequim Bay State Park',
     lat: 48.052,
     lon: -123.0248,
-    categories: ['coast', 'forest'],
+    reasons: ['coast', 'picnic'],
     blurb: 'Rain-shadow coastal park with a mile of shoreline, forest trails, and a boat launch.',
   },
   {
@@ -708,7 +718,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Belfair State Park',
     lat: 47.4289,
     lon: -122.8821,
-    categories: ['coast', 'forest'],
+    reasons: ['coast', 'wildlife', 'picnic'],
     blurb: 'Wide tidal marsh at the head of Hood Canal; saltwater wading, birding, picnics.',
   },
   {
@@ -716,7 +726,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Millersylvania State Park',
     lat: 46.9097,
     lon: -122.908,
-    categories: ['lake', 'forest'],
+    reasons: ['lake', 'paddle', 'picnic'],
     blurb: 'Old-growth forest around Deep Lake near Olympia; swimming, kayaking, easy trails.',
   },
   {
@@ -724,7 +734,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Scenic Beach State Park',
     lat: 47.6406,
     lon: -122.8612,
-    categories: ['coast', 'forest'],
+    reasons: ['coast', 'viewpoint', 'picnic'],
     blurb: 'Pebble beach with head-on Olympic Mountain views across Hood Canal.',
   },
   {
@@ -732,7 +742,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Olympia (State Capitol)',
     lat: 47.0357,
     lon: -122.9072,
-    categories: ['town'],
+    reasons: ['historic', 'town'],
     blurb: 'Tour the Legislative Building, loop Capitol Lake, explore the downtown waterfront.',
   },
   {
@@ -740,7 +750,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Tacoma (Museum District)',
     lat: 47.2442,
     lon: -122.4379,
-    categories: ['town', 'coast'],
+    reasons: ['museum', 'town'],
     blurb: 'Museum of Glass with glassblowing demos, Chihuly Bridge, Tacoma Art Museum, waterfront walk.',
   },
   {
@@ -748,7 +758,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Padilla Bay Estuarine Reserve',
     lat: 48.4978,
     lon: -122.4718,
-    categories: ['coast', 'forest'],
+    reasons: ['wildlife', 'coast', 'museum'],
     blurb: 'Interpretive center + shoreline trail over Skagit tideflats; excellent for birding.',
   },
   {
@@ -756,7 +766,7 @@ export const DESTINATIONS: Destination[] = [
     name: 'Nisqually Wildlife Refuge',
     lat: 47.0702,
     lon: -122.7067,
-    categories: ['coast', 'forest'],
+    reasons: ['wildlife', 'coast'],
     blurb: 'Mile-long boardwalk over tidal flats; exceptional birding year-round.',
   },
 ];
