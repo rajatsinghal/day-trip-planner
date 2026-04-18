@@ -21,7 +21,7 @@ export const REASON_META: Record<ReasonsToVisit, { emoji: string; label: string 
   picnic: { emoji: '🧺', label: 'Picnic' },
 };
 
-// Order used by the filter bar. Excludes transitional legacy values.
+// Order used by the filter bar.
 export const REASON_ORDER: ReasonsToVisit[] = [
   'lake',
   'waterfall',

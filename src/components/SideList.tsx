@@ -43,6 +43,16 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
     if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [selectedId]);
 
+  // Popover is position: fixed against viewport coordinates captured once.
+  // Any scroll (list or page) would desync it from the source row — close
+  // and let the user re-hover if they still want the card.
+  useEffect(() => {
+    if (!popover) return;
+    const close = () => setPopover(null);
+    window.addEventListener('scroll', close, true);
+    return () => window.removeEventListener('scroll', close, true);
+  }, [popover]);
+
   function openPopover(row: EnrichedDestination) {
     const el = rowRefs.current.get(row.id);
     if (!el) return;

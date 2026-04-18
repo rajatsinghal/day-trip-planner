@@ -32,7 +32,8 @@ export function computeDayOptions(now: Date = new Date()): DayOption[] {
     const sat = addDays(today, daysUntilSat);
     const sun = addDays(sat, 1);
     for (const d of [sat, sun]) {
-      if (!results.some((r) => r.getTime() === d.getTime())) {
+      const iso = toIsoDate(d);
+      if (!results.some((r) => toIsoDate(r) === iso)) {
         results.push(d);
       }
     }

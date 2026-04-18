@@ -84,17 +84,6 @@ export function shortForecastToCode(s: string): number {
   return 2;
 }
 
-// Derive a plausible cloud-cover % from the code so our existing aggregator
-// (which averages cloud cover inside the trip window) still has a signal to
-// work with. Chosen so the aggregator's thresholds land on the same code.
-function codeToCloudGuess(code: number): number {
-  if (code === 0) return 5;
-  if (code === 1) return 18;
-  if (code === 2) return 55;
-  if (code === 3) return 92;
-  return 100; // precip / fog / snow / thunder — sky is fully obscured
-}
-
 function parseNwsHourly(json: NwsHourlyResponse): WeatherResponse {
   const periods = json.properties.periods;
   const hourly: HourlyWeather = {
@@ -104,21 +93,18 @@ function parseNwsHourly(json: NwsHourlyResponse): WeatherResponse {
     precipitation: [],
     wind_speed_10m: [],
     weather_code: [],
-    cloud_cover: [],
   };
   for (const p of periods) {
     // NWS startTime looks like "2026-04-17T11:00:00-07:00"; keep the local
     // hour bit the aggregator parses.
     const iso = p.startTime.slice(0, 13) + ':00';
     const tempC = p.temperatureUnit === 'F' ? ((p.temperature - 32) * 5) / 9 : p.temperature;
-    const code = shortForecastToCode(p.shortForecast);
     hourly.time.push(iso);
     hourly.temperature_2m.push(tempC);
     hourly.precipitation_probability.push(p.probabilityOfPrecipitation?.value ?? 0);
     hourly.precipitation.push(0);
     hourly.wind_speed_10m.push(parseWindMph(p.windSpeed) * 1.609);
-    hourly.weather_code.push(code);
-    hourly.cloud_cover.push(codeToCloudGuess(code));
+    hourly.weather_code.push(shortForecastToCode(p.shortForecast));
   }
   return { hourly, fetchedAt: Date.now() };
 }
