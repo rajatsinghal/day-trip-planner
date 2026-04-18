@@ -14,38 +14,60 @@ export interface WeatherResponse {
   fetchedAt: number;
 }
 
-interface OpenMeteoResponse {
-  daily: {
-    time: string[];
-    temperature_2m_max: number[];
-    temperature_2m_min: number[];
-    precipitation_probability_max: number[];
-    precipitation_sum: number[];
-    wind_speed_10m_max: number[];
-    weather_code: number[];
-    sunshine_duration: number[];
-  };
+interface OpenMeteoDaily {
+  time: string[];
+  temperature_2m_max: number[];
+  temperature_2m_min: number[];
+  precipitation_probability_max: number[];
+  precipitation_sum: number[];
+  wind_speed_10m_max: number[];
+  weather_code: number[];
+  sunshine_duration: number[];
+}
+
+interface OpenMeteoLocation {
+  daily: OpenMeteoDaily;
 }
 
 const ENDPOINT = 'https://api.open-meteo.com/v1/forecast';
 
-export async function fetchWeather(
-  lat: number,
-  lon: number,
+const DAILY_PARAMS = [
+  'temperature_2m_max',
+  'temperature_2m_min',
+  'precipitation_probability_max',
+  'precipitation_sum',
+  'wind_speed_10m_max',
+  'weather_code',
+  'sunshine_duration',
+].join(',');
+
+function parseLocation(loc: OpenMeteoLocation): WeatherResponse {
+  const days: DailyWeather[] = loc.daily.time.map((iso, i) => ({
+    isoDate: iso,
+    tMaxC: loc.daily.temperature_2m_max[i],
+    tMinC: loc.daily.temperature_2m_min[i],
+    precipProb: loc.daily.precipitation_probability_max[i] ?? 0,
+    precipMm: loc.daily.precipitation_sum[i] ?? 0,
+    windMaxKmh: loc.daily.wind_speed_10m_max[i] ?? 0,
+    weatherCode: loc.daily.weather_code[i] ?? 0,
+    sunshineHours: (loc.daily.sunshine_duration[i] ?? 0) / 3600,
+  }));
+  return { days, fetchedAt: Date.now() };
+}
+
+// Open-Meteo accepts comma-separated lat/lon lists in a single request.
+// Single-location responses return an object; multi-location responses
+// return an array. We normalize both to an array.
+export async function fetchWeatherBatch(
+  coords: { lat: number; lon: number }[],
   signal?: AbortSignal,
-): Promise<WeatherResponse> {
+): Promise<WeatherResponse[]> {
+  if (coords.length === 0) return [];
+
   const params = new URLSearchParams({
-    latitude: lat.toFixed(4),
-    longitude: lon.toFixed(4),
-    daily: [
-      'temperature_2m_max',
-      'temperature_2m_min',
-      'precipitation_probability_max',
-      'precipitation_sum',
-      'wind_speed_10m_max',
-      'weather_code',
-      'sunshine_duration',
-    ].join(','),
+    latitude: coords.map((c) => c.lat.toFixed(4)).join(','),
+    longitude: coords.map((c) => c.lon.toFixed(4)).join(','),
+    daily: DAILY_PARAMS,
     timezone: 'auto',
     forecast_days: '10',
     temperature_unit: 'celsius',
@@ -53,23 +75,11 @@ export async function fetchWeather(
     precipitation_unit: 'mm',
   });
 
-  const url = `${ENDPOINT}?${params}`;
-  const res = await fetch(url, { signal });
+  const res = await fetch(`${ENDPOINT}?${params}`, { signal });
   if (!res.ok) throw new Error(`Weather fetch failed: ${res.status}`);
-  const json = (await res.json()) as OpenMeteoResponse;
-
-  const days: DailyWeather[] = json.daily.time.map((iso, i) => ({
-    isoDate: iso,
-    tMaxC: json.daily.temperature_2m_max[i],
-    tMinC: json.daily.temperature_2m_min[i],
-    precipProb: json.daily.precipitation_probability_max[i] ?? 0,
-    precipMm: json.daily.precipitation_sum[i] ?? 0,
-    windMaxKmh: json.daily.wind_speed_10m_max[i] ?? 0,
-    weatherCode: json.daily.weather_code[i] ?? 0,
-    sunshineHours: (json.daily.sunshine_duration[i] ?? 0) / 3600,
-  }));
-
-  return { days, fetchedAt: Date.now() };
+  const json = (await res.json()) as OpenMeteoLocation | OpenMeteoLocation[];
+  const list = Array.isArray(json) ? json : [json];
+  return list.map(parseLocation);
 }
 
 // Primary signal is the WMO weather code (what the sky actually looks like).

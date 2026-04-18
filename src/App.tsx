@@ -7,7 +7,7 @@ import { computeDayOptions } from './lib/days';
 import { estimateDriveMinutes, haversineKm } from './lib/geo';
 import type { TempUnit } from './lib/units';
 import {
-  fetchWeather,
+  fetchWeatherBatch,
   scoreBand,
   scoreWeather,
   type DailyWeather,
@@ -15,6 +15,7 @@ import {
 } from './lib/weather';
 
 const TEMP_UNIT_KEY = 'dtp.tempUnit';
+const WEATHER_BATCH_SIZE = 10;
 
 export interface EnrichedDestination extends Destination {
   driveMinutes: number;
@@ -47,27 +48,42 @@ function App() {
     setLoading(true);
     setError(null);
 
-    // Fetch all destinations in parallel; tolerate individual failures.
-    const jobs = DESTINATIONS.map(async (d) => {
+    // Batch destinations 10-at-a-time and call Open-Meteo's multi-coord endpoint.
+    // Results stream in per batch so the UI can render the first rows while the
+    // rest are still in flight.
+    const batches: (typeof DESTINATIONS)[] = [];
+    for (let i = 0; i < DESTINATIONS.length; i += WEATHER_BATCH_SIZE) {
+      batches.push(DESTINATIONS.slice(i, i + WEATHER_BATCH_SIZE));
+    }
+
+    let successes = 0;
+    const jobs = batches.map(async (batch) => {
       try {
-        const wx = await fetchWeather(d.lat, d.lon, controller.signal);
-        return [d.id, wx] as const;
+        const responses = await fetchWeatherBatch(
+          batch.map((d) => ({ lat: d.lat, lon: d.lon })),
+          controller.signal,
+        );
+        if (cancelled) return;
+        successes += 1;
+        setWeatherByDest((prev) => {
+          const next = { ...prev };
+          responses.forEach((wx, idx) => {
+            const dest = batch[idx];
+            if (dest) next[dest.id] = wx;
+          });
+          return next;
+        });
       } catch (e) {
         if ((e as Error).name === 'AbortError') throw e;
-        return null;
+        console.warn('Weather batch failed:', e);
       }
     });
 
     Promise.all(jobs)
-      .then((results) => {
+      .then(() => {
         if (cancelled) return;
-        const map: WeatherMap = {};
-        for (const r of results) {
-          if (r) map[r[0]] = r[1];
-        }
-        setWeatherByDest(map);
         setLoading(false);
-        if (Object.keys(map).length === 0) {
+        if (successes === 0) {
           setError('Could not load weather data. Check your internet connection.');
         }
       })
