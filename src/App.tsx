@@ -64,7 +64,9 @@ function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [tempUnit, setTempUnit] = useState<TempUnit>(() => {
-    return localStorage.getItem(TEMP_UNIT_KEY) === 'F' ? 'F' : 'C';
+    // US-targeted app (NWS-only data), so default to F. Existing visitors
+    // who explicitly picked C keep it; everyone else lands on °F + mph.
+    return localStorage.getItem(TEMP_UNIT_KEY) === 'C' ? 'C' : 'F';
   });
   const [selectedReasons, setSelectedReasons] = useState<Set<ReasonsToVisit>>(() => {
     try {
