@@ -71,7 +71,7 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
               onMouseLeave={() => onHover(null)}
               className={
                 'w-full text-left px-3 py-2.5 flex gap-3 items-start transition-colors ' +
-                (isSelected ? 'bg-slate-100' : 'hover:bg-slate-50')
+                (isSelected ? 'bg-slate-200' : 'hover:bg-slate-50')
               }
             >
               <span
