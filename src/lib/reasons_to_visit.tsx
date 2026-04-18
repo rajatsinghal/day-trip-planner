@@ -17,16 +17,25 @@ const strokeProps = {
   'aria-hidden': true,
 };
 
-// Arched cliff lip with three curving streams spilling into a wavy pool.
-// The curves (not straight lines) are the thing that reads as "water, not
-// table legs."
+// Mini landscape scene: green peak with a white waterfall ribbon cascading
+// into a blue pool at the base. Trapezoidal ribbon + foam splash makes the
+// water carry visual weight at small sizes; flow lines inside add texture.
 const WaterfallIcon = (
-  <svg {...strokeProps}>
-    <path d="M2 8 Q 6 4 10 6 T 16 6 T 22 6" />
-    <path d="M7 7 Q 6.3 11 7.3 15 T 7 18" />
-    <path d="M12 6 Q 11.3 11 12.3 15 T 12 18" />
-    <path d="M17 6 Q 16.3 11 17.3 15 T 17 18" />
-    <path d="M3 20 Q 6 18 9 20 T 15 20 T 21 20" />
+  <svg
+    width="1em"
+    height="1em"
+    viewBox="0 0 24 24"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden
+  >
+    <path d="M2 18 L 9 6 L 13 12 L 17 9 L 22 18 Z" fill="#86efac" stroke="#16a34a" strokeWidth="0.8" />
+    <path d="M8.2 6.5 L 7 18 L 10.5 18 L 9.5 6.5 Z" fill="white" stroke="#0284c7" strokeWidth="0.6" />
+    <line x1="8.6" y1="8" x2="8.2" y2="17" stroke="#38bdf8" strokeWidth="0.5" />
+    <line x1="9.1" y1="8" x2="9.4" y2="17" stroke="#38bdf8" strokeWidth="0.5" />
+    <rect x="2" y="18" width="20" height="3.5" fill="#0ea5e9" rx="0.6" />
+    <ellipse cx="8.75" cy="18.3" rx="2.2" ry="0.5" fill="white" opacity="0.9" />
+    <path d="M4 20 h2 m3 0 h2 m3 0 h2 m3 0 h2" stroke="white" strokeWidth="0.6" opacity="0.7" />
   </svg>
 );
 
