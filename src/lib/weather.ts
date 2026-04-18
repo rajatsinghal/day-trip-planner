@@ -6,7 +6,6 @@ export interface DailyWeather {
   precipMm: number;
   windMaxKmh: number;
   weatherCode: number; // WMO code
-  sunshineHours: number;
 }
 
 export interface WeatherResponse {
@@ -14,73 +13,34 @@ export interface WeatherResponse {
   fetchedAt: number;
 }
 
-interface OpenMeteoDaily {
+// Day-trip window (local time at each destination).
+// Aggregations are computed over hours where DAY_TRIP_START <= hour < DAY_TRIP_END.
+// 10..16 exclusive = 10 AM through 3:59 PM, i.e. a "10-to-4" outing.
+export const DAY_TRIP_START = 10;
+export const DAY_TRIP_END = 16;
+
+interface OpenMeteoHourly {
   time: string[];
-  temperature_2m_max: number[];
-  temperature_2m_min: number[];
-  precipitation_probability_max: number[];
-  precipitation_sum: number[];
-  wind_speed_10m_max: number[];
+  temperature_2m: number[];
+  precipitation_probability: number[];
+  precipitation: number[];
+  wind_speed_10m: number[];
   weather_code: number[];
-  sunshine_duration: number[];
 }
 
 interface OpenMeteoLocation {
-  daily: OpenMeteoDaily;
+  hourly: OpenMeteoHourly;
 }
 
 const ENDPOINT = 'https://api.open-meteo.com/v1/forecast';
 
-const DAILY_PARAMS = [
-  'temperature_2m_max',
-  'temperature_2m_min',
-  'precipitation_probability_max',
-  'precipitation_sum',
-  'wind_speed_10m_max',
+const HOURLY_PARAMS = [
+  'temperature_2m',
+  'precipitation_probability',
+  'precipitation',
+  'wind_speed_10m',
   'weather_code',
-  'sunshine_duration',
 ].join(',');
-
-function parseLocation(loc: OpenMeteoLocation): WeatherResponse {
-  const days: DailyWeather[] = loc.daily.time.map((iso, i) => ({
-    isoDate: iso,
-    tMaxC: loc.daily.temperature_2m_max[i],
-    tMinC: loc.daily.temperature_2m_min[i],
-    precipProb: loc.daily.precipitation_probability_max[i] ?? 0,
-    precipMm: loc.daily.precipitation_sum[i] ?? 0,
-    windMaxKmh: loc.daily.wind_speed_10m_max[i] ?? 0,
-    weatherCode: loc.daily.weather_code[i] ?? 0,
-    sunshineHours: (loc.daily.sunshine_duration[i] ?? 0) / 3600,
-  }));
-  return { days, fetchedAt: Date.now() };
-}
-
-// Open-Meteo accepts comma-separated lat/lon lists in a single request.
-// Single-location responses return an object; multi-location responses
-// return an array. We normalize both to an array.
-export async function fetchWeatherBatch(
-  coords: { lat: number; lon: number }[],
-  signal?: AbortSignal,
-): Promise<WeatherResponse[]> {
-  if (coords.length === 0) return [];
-
-  const params = new URLSearchParams({
-    latitude: coords.map((c) => c.lat.toFixed(4)).join(','),
-    longitude: coords.map((c) => c.lon.toFixed(4)).join(','),
-    daily: DAILY_PARAMS,
-    timezone: 'auto',
-    forecast_days: '10',
-    temperature_unit: 'celsius',
-    wind_speed_unit: 'kmh',
-    precipitation_unit: 'mm',
-  });
-
-  const res = await fetch(`${ENDPOINT}?${params}`, { signal });
-  if (!res.ok) throw new Error(`Weather fetch failed: ${res.status}`);
-  const json = (await res.json()) as OpenMeteoLocation | OpenMeteoLocation[];
-  const list = Array.isArray(json) ? json : [json];
-  return list.map(parseLocation);
-}
 
 // Primary signal is the WMO weather code (what the sky actually looks like).
 // Temp / wind / high-precip probability are modifiers on top.
@@ -97,6 +57,99 @@ function weatherCodeBaseScore(code: number): number {
   if (code >= 85 && code <= 86) return 12; // Snow showers
   if (code >= 95) return 5; // Thunderstorm
   return 40;
+}
+
+// Roll hourly readings up into one entry per calendar date, using only the
+// hours inside the day-trip window. Representative weather code is the "worst"
+// code observed in the window — a 3 PM shower matters for a 10-to-4 trip.
+function aggregateHourlyToDaily(hourly: OpenMeteoHourly): DailyWeather[] {
+  const byDay = new Map<string, number[]>();
+
+  for (let i = 0; i < hourly.time.length; i++) {
+    const t = hourly.time[i];
+    const date = t.slice(0, 10);
+    const hour = parseInt(t.slice(11, 13), 10);
+    if (hour >= DAY_TRIP_START && hour < DAY_TRIP_END) {
+      const arr = byDay.get(date) ?? [];
+      arr.push(i);
+      byDay.set(date, arr);
+    }
+  }
+
+  const days: DailyWeather[] = [];
+  const dates = Array.from(byDay.keys()).sort();
+  for (const date of dates) {
+    const idx = byDay.get(date)!;
+    if (idx.length === 0) continue;
+
+    let tMax = -Infinity;
+    let tMin = Infinity;
+    let precipProbMax = 0;
+    let precipSum = 0;
+    let windMax = 0;
+    let worstCode = hourly.weather_code[idx[0]] ?? 0;
+    let worstScore = weatherCodeBaseScore(worstCode);
+
+    for (const i of idx) {
+      const temp = hourly.temperature_2m[i];
+      if (typeof temp === 'number') {
+        if (temp > tMax) tMax = temp;
+        if (temp < tMin) tMin = temp;
+      }
+      precipProbMax = Math.max(precipProbMax, hourly.precipitation_probability[i] ?? 0);
+      precipSum += hourly.precipitation[i] ?? 0;
+      windMax = Math.max(windMax, hourly.wind_speed_10m[i] ?? 0);
+      const code = hourly.weather_code[i] ?? 0;
+      const score = weatherCodeBaseScore(code);
+      if (score < worstScore) {
+        worstScore = score;
+        worstCode = code;
+      }
+    }
+
+    days.push({
+      isoDate: date,
+      tMaxC: tMax === -Infinity ? 0 : tMax,
+      tMinC: tMin === Infinity ? 0 : tMin,
+      precipProb: Math.round(precipProbMax),
+      precipMm: Math.round(precipSum * 10) / 10,
+      windMaxKmh: windMax,
+      weatherCode: worstCode,
+    });
+  }
+
+  return days;
+}
+
+function parseLocation(loc: OpenMeteoLocation): WeatherResponse {
+  return { days: aggregateHourlyToDaily(loc.hourly), fetchedAt: Date.now() };
+}
+
+// Open-Meteo accepts comma-separated lat/lon lists in a single request.
+// Single-location responses return an object; multi-location responses
+// return an array. We normalize both to an array.
+export async function fetchWeatherBatch(
+  coords: { lat: number; lon: number }[],
+  signal?: AbortSignal,
+): Promise<WeatherResponse[]> {
+  if (coords.length === 0) return [];
+
+  const params = new URLSearchParams({
+    latitude: coords.map((c) => c.lat.toFixed(4)).join(','),
+    longitude: coords.map((c) => c.lon.toFixed(4)).join(','),
+    hourly: HOURLY_PARAMS,
+    timezone: 'auto',
+    forecast_days: '10',
+    temperature_unit: 'celsius',
+    wind_speed_unit: 'kmh',
+    precipitation_unit: 'mm',
+  });
+
+  const res = await fetch(`${ENDPOINT}?${params}`, { signal });
+  if (!res.ok) throw new Error(`Weather fetch failed: ${res.status}`);
+  const json = (await res.json()) as OpenMeteoLocation | OpenMeteoLocation[];
+  const list = Array.isArray(json) ? json : [json];
+  return list.map(parseLocation);
 }
 
 export function scoreWeather(d: DailyWeather): number {
@@ -140,4 +193,3 @@ export function weatherCodeToLabel(code: number): { emoji: string; label: string
   if (code >= 95) return { emoji: '⛈️', label: 'Thunderstorm' };
   return { emoji: '❓', label: 'Unknown' };
 }
-
