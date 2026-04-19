@@ -316,7 +316,7 @@ export const austinHub: Hub = {
     },
     {
       id: 'san-antonio-river-walk',
-      name: 'San Antonio River Walk',
+      name: 'San Antonio (The Alamo + River Walk)',
       lat: 29.4252,
       lon: -98.4946,
       reasons_to_visit: ['town', 'historic'],
@@ -343,7 +343,7 @@ export const austinHub: Hub = {
     },
     {
       id: 'brenham',
-      name: 'Brenham',
+      name: 'Brenham (Blue Bell)',
       lat: 30.1669,
       lon: -96.3977,
       reasons_to_visit: ['town', 'garden'],
@@ -361,7 +361,7 @@ export const austinHub: Hub = {
     },
     {
       id: 'waco',
-      name: 'Waco',
+      name: 'Waco (Magnolia + Mammoth NM)',
       lat: 31.5493,
       lon: -97.1467,
       reasons_to_visit: ['town', 'zoo', 'museum'],

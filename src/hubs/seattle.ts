@@ -228,7 +228,7 @@ export const seattleHub: Hub = {
     },
     {
       id: 'artist-point',
-      name: 'Artist Point (Mt Baker)',
+      name: 'Artist Point / Picture Lake (Mt Baker)',
       lat: 48.8467,
       lon: -121.6923,
       elevation_m: 1554,
@@ -277,7 +277,7 @@ export const seattleHub: Hub = {
     },
     {
       id: 'anacortes',
-      name: 'Anacortes',
+      name: 'Anacortes (Mt Erie / Cap Sante)',
       lat: 48.5129,
       lon: -122.6127,
       reasons_to_visit: ['town', 'coast', 'viewpoint'],
@@ -376,7 +376,7 @@ export const seattleHub: Hub = {
     },
     {
       id: 'chuckanut-drive',
-      name: 'Chuckanut Drive (SR-11)',
+      name: 'Chuckanut Drive / Larrabee SP',
       lat: 48.6478,
       lon: -122.4856,
       reasons_to_visit: ['coast', 'viewpoint', 'hike', 'town'],
