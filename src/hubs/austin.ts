@@ -377,5 +377,50 @@ export const austinHub: Hub = {
       blurb:
         'Isolated canyon grove of Uvalde bigtooth maples; peak fall color early-to-mid November, 11 miles of trails.',
     },
+    {
+      id: 'luckenbach',
+      name: 'Luckenbach',
+      lat: 30.2392,
+      lon: -98.7656,
+      reasons_to_visit: ['town', 'historic'],
+      blurb:
+        'Hill Country hamlet SE of Fredericksburg; 1887 general store and dance hall, open-air picking circles, Waylon-and-Willie lore.',
+    },
+    {
+      id: 'pace-bend',
+      name: 'Pace Bend Park (Lake Travis)',
+      lat: 30.4397,
+      lon: -98.0011,
+      reasons_to_visit: ['lake', 'paddle', 'fish', 'picnic'],
+      blurb:
+        '9 mi of Lake Travis shoreline on a hilly peninsula; cliff coves, primitive camping, swimming and paddling.',
+    },
+    {
+      id: 'bandera',
+      name: 'Bandera (Cowboy Capital)',
+      lat: 29.7267,
+      lon: -99.0736,
+      reasons_to_visit: ['town', 'historic'],
+      blurb:
+        "'Cowboy Capital of the World'; dude ranches, weekly rodeos, Arkey Blue's Silver Dollar honky-tonk on Main.",
+    },
+    {
+      id: 'dripping-springs',
+      name: 'Dripping Springs',
+      lat: 30.1902,
+      lon: -98.0867,
+      reasons_to_visit: ['town'],
+      blurb:
+        "'Wedding Capital of Texas'; 30+ wineries, distilleries, and breweries within 15 mi, Hamilton Pool Rd access.",
+    },
+    {
+      id: 'willow-city-loop',
+      name: 'Willow City Loop (Fredericksburg)',
+      lat: 30.4339,
+      lon: -98.6933,
+      reasons_to_visit: ['viewpoint', 'garden'],
+      blurb:
+        '13-mi county-road drive through rugged ranch canyons N of Fredericksburg; peak bluebonnet and paintbrush late March–mid-April.',
+    },
   ],
 };
