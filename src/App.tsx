@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { HUBS, HUBS_BY_ID, defaultHub, type Destination, type ReasonsToVisit } from './hubs';
-import { DayChips } from './components/DayChips';
 import { SideList } from './components/SideList';
 import { MapView } from './components/Map';
-import { HourRangeSlider } from './components/HourRangeSlider';
-import { ReasonFilter } from './components/ReasonFilter';
+import { ReasonChips, ReasonCount } from './components/ReasonFilter';
+import { SettingsMenu } from './components/SettingsMenu';
+import { WhenPicker } from './components/WhenPicker';
 import { computeDayOptions } from './lib/days';
 import { estimateDriveMinutes, haversineKm } from './lib/geo';
 import { REASON_ORDER } from './lib/reasons_to_visit';
@@ -187,8 +187,25 @@ function App() {
     };
   }, [selectedHub]);
 
+  // Dynamic window clamp: when "Today" is the selected day, the start of the
+  // user's preferred trip window can be in the past (e.g. it's 2 PM but the
+  // saved preference is 10 AM – 4 PM). Clamp the start to the current hour
+  // so scoring and the slider both reflect what's actually plannable. Other
+  // days use the user's preference unchanged. Computed at render time — if
+  // the page sits open across an hour boundary the clamp is a tick stale,
+  // which is fine.
+  const todayIso = dayOptions[0].isoDate;
+  const isToday = selectedDay === todayIso;
+  const currentHour = new Date().getHours();
+  const effectiveWindowMin = isToday
+    ? Math.min(WINDOW_MAX_HOUR - 1, Math.max(WINDOW_MIN_HOUR, currentHour))
+    : WINDOW_MIN_HOUR;
+  const displayWindowStart = Math.max(windowHours[0], effectiveWindowMin);
+  const displayWindowEnd = Math.max(windowHours[1], displayWindowStart + 1);
+
   const rows: EnrichedDestination[] = useMemo(() => {
-    const [startHour, endHour] = windowHours;
+    const startHour = displayWindowStart;
+    const endHour = displayWindowEnd;
     const enriched = selectedHub.destinations.map((d) => {
       const distanceKm = haversineKm(selectedHub.center, d);
       const driveMinutes = estimateDriveMinutes(distanceKm);
@@ -207,7 +224,7 @@ function App() {
       return a.driveMinutes - b.driveMinutes;
     });
     return enriched;
-  }, [weatherByDest, selectedDay, windowHours, selectedHub]);
+  }, [weatherByDest, selectedDay, displayWindowStart, displayWindowEnd, selectedHub]);
 
   const filteredRows = useMemo(() => {
     if (selectedReasons.size === 0) return rows;
@@ -216,64 +233,65 @@ function App() {
 
   return (
     <div className="flex h-full flex-col bg-slate-50">
-      <header className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-4 py-3">
-        <div className="flex items-baseline gap-2">
-          <h1 className="text-base font-semibold text-slate-900">Day Trip Planner</h1>
-          <span className="text-xs text-slate-500">Area</span>
-          <select
-            value={selectedHubId}
-            onChange={(e) => setSelectedHubId(e.target.value)}
-            className="rounded border border-slate-300 bg-white px-1.5 py-0.5 text-xs font-medium text-slate-800 hover:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
-            aria-label="Area"
-          >
-            {HUBS.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <HourRangeSlider
-          start={windowHours[0]}
-          end={windowHours[1]}
-          min={WINDOW_MIN_HOUR}
-          max={WINDOW_MAX_HOUR}
-          onChange={(s, e) => setWindowHours([s, e])}
-        />
-        <div className="flex-1" />
-        <DayChips options={dayOptions} selected={selectedDay} onSelect={setSelectedDay} />
-        <div
-          className="ml-1 flex overflow-hidden rounded-lg border border-slate-200 text-xs"
-          role="group"
-          aria-label="Temperature units"
-        >
-          {(['C', 'F'] as const).map((u) => {
-            const active = tempUnit === u;
-            return (
-              <button
-                key={u}
-                onClick={() => setTempUnit(u)}
-                className={
-                  'px-2 py-1 font-semibold transition-colors ' +
-                  (active
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-white text-slate-600 hover:bg-slate-100')
-                }
+      <header className="flex items-start gap-3 border-b border-slate-200 bg-white px-3 py-2">
+        <div className="flex flex-shrink-0 flex-col items-start gap-1 self-center">
+          <h1 className="flex items-center gap-2 leading-none">
+            <img
+              src="/logo-icon.png"
+              alt=""
+              className="h-9 w-auto"
+              width={28}
+              height={36}
+            />
+            <span className="font-display text-2xl font-extrabold tracking-tight text-slate-900">
+              DayTrip
+            </span>
+          </h1>
+          <div className="flex items-baseline gap-1 leading-none">
+            <span className="text-xs text-slate-500">in</span>
+            <div className="relative">
+              <select
+                value={selectedHubId}
+                onChange={(e) => setSelectedHubId(e.target.value)}
+                className="cursor-pointer appearance-none bg-transparent pr-4 text-sm font-bold text-slate-800 hover:text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                aria-label="Area"
               >
-                °{u}
-              </button>
-            );
-          })}
+                {HUBS.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.name}
+                  </option>
+                ))}
+              </select>
+              <span
+                className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[10px] text-slate-500"
+                aria-hidden
+              >
+                ▾
+              </span>
+            </div>
+          </div>
         </div>
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+          <ReasonChips selected={selectedReasons} onToggle={toggleReason} />
+          <ReasonCount
+            totalCount={rows.length}
+            matchCount={filteredRows.length}
+            hasSelection={selectedReasons.size > 0}
+            onClear={clearReasons}
+          />
+        </div>
+        <WhenPicker
+          dayOptions={dayOptions}
+          selectedDay={selectedDay}
+          onSelectDay={setSelectedDay}
+          windowStart={displayWindowStart}
+          windowEnd={displayWindowEnd}
+          windowMin={effectiveWindowMin}
+          windowMax={WINDOW_MAX_HOUR}
+          onWindowChange={(s, e) => setWindowHours([s, e])}
+        />
+        <SettingsMenu tempUnit={tempUnit} onTempUnitChange={setTempUnit} />
       </header>
-
-      <ReasonFilter
-        selected={selectedReasons}
-        onToggle={toggleReason}
-        onClear={clearReasons}
-        totalCount={rows.length}
-        matchCount={filteredRows.length}
-      />
 
       {error && (
         <div className="bg-rose-50 border-b border-rose-200 px-4 py-2 text-sm text-rose-700">

@@ -68,7 +68,7 @@ export function HourRangeSlider({
         />
       </div>
       <span className="text-xs font-medium text-slate-700 whitespace-nowrap tabular-nums">
-        {formatHour(start)} – {formatHour(end)}
+        {formatHour(start)}-{formatHour(end)}
       </span>
     </div>
   );
