@@ -44,7 +44,7 @@ export const denverHub: Hub = {
       lat: 39.7339,
       lon: -105.2389,
       elevation_m: 2225,
-      reasons_to_visit: ['viewpoint', 'museum', 'historic', 'hike'],
+      reasons_to_visit: ['viewpoint', 'museum', 'historic'],
       blurb:
         'Buffalo Bill museum and grave above Golden; Front Range overlooks and short Lookout Mtn Preserve trails on the Lariat Loop byway.',
     },
@@ -64,7 +64,7 @@ export const denverHub: Hub = {
       lon: -105.2942,
       reasons_to_visit: ['hike', 'viewpoint'],
       blurb:
-        'Red sandstone canyon south of Boulder; 11 mi of trails, world-class rock climbing, timed entry on summer weekends.',
+        'Red sandstone canyon south of Boulder; 11 mi of trails, 500+ climbing routes, timed entry on summer weekends.',
     },
     {
       id: 'nederland',
@@ -73,7 +73,7 @@ export const denverHub: Hub = {
       lon: -105.5108,
       reasons_to_visit: ['town'],
       blurb:
-        'Quirky mountain town west of Boulder; Carousel of Happiness, Caribou ghost town, Frozen Dead Guy Days in March.',
+        'Mountain town west of Boulder; Carousel of Happiness, Caribou ghost town, Frozen Dead Guy Days in March.',
     },
     {
       id: 'brainard-lake',
@@ -150,7 +150,7 @@ export const denverHub: Hub = {
       lon: -105.6972,
       reasons_to_visit: ['town', 'historic'],
       blurb:
-        '1867 silver-mining town with 200+ restored buildings; Georgetown Loop narrow-gauge steam train runs to Silver Plume.',
+        'Victorian silver-mining town with 200+ restored buildings; Georgetown Loop narrow-gauge steam train runs to Silver Plume.',
     },
     {
       id: 'guanella-pass',
@@ -180,7 +180,7 @@ export const denverHub: Hub = {
       elevation_m: 3280,
       reasons_to_visit: ['ski'],
       blurb:
-        'Highest skiable terrain in Colorado; long season often running into June, East Wall steeps and the Beach tailgate.',
+        'Highest skiable terrain in North America (East Wall, 13,050 ft); long season often running into June, the Beach tailgate.',
     },
     {
       id: 'keystone',
@@ -277,7 +277,7 @@ export const denverHub: Hub = {
       lon: -105.3172,
       reasons_to_visit: ['lake', 'paddle', 'town'],
       blurb:
-        'Mountain town 30 min from Denver; 55-acre Evergreen Lake with paddleboard rentals, winter outdoor ice skating.',
+        'Foothills town with 55-acre Evergreen Lake; paddleboard rentals in summer, outdoor ice skating in winter.',
     },
     {
       id: 'roxborough-sp',
@@ -304,7 +304,7 @@ export const denverHub: Hub = {
       lon: -104.7411,
       reasons_to_visit: ['hike', 'historic', 'waterfall'],
       blurb:
-        'Cherry Creek canyon southeast of Denver; 14 mi of trails past the 1933 dam-failure ruins and a small cascade.',
+        'Cherry Creek canyon southeast of Denver; 12 mi of trails past the 1933 dam-failure ruins and a small cascade.',
     },
     {
       id: 'staunton-sp',
@@ -313,7 +313,7 @@ export const denverHub: Hub = {
       lon: -105.3831,
       reasons_to_visit: ['hike', 'waterfall', 'viewpoint'],
       blurb:
-        '3,800-acre park near Conifer; 29 mi of trails, 12-mi round-trip to the 100-ft Elk Falls overlook.',
+        '3,800-acre park near Conifer; 29 mi of trails, ~11-mi round-trip to the 100-ft Elk Falls overlook.',
     },
     {
       id: 'rocky-mtn-arsenal-nwr',
@@ -451,9 +451,9 @@ export const denverHub: Hub = {
       lat: 37.7326,
       lon: -105.5139,
       elevation_m: 2500,
-      reasons_to_visit: ['hike', 'viewpoint', 'wildlife'],
+      reasons_to_visit: ['hike', 'viewpoint'],
       blurb:
-        'Tallest dunes in North America (Star Dune, 741 ft); Medano Creek beach May–June, ~4 hr via US-285 from Denver.',
+        'Tallest dunes in North America (~741 ft, Star/Hidden Dunes); Medano Creek beach May–June, sandboarding, Sangre de Cristo backdrop.',
     },
   ],
 };
