@@ -71,6 +71,24 @@ export const bayAreaHub: Hub = {
         'Ferry-only bay island; 5-mile Perimeter Road loop, Mt Caroline Livermore summit, and the Immigration Station museum.',
     },
     {
+      id: 'alcatraz',
+      name: 'Alcatraz Island',
+      lat: 37.8267,
+      lon: -122.4233,
+      reasons_to_visit: ['island', 'historic', 'museum'],
+      blurb:
+        'Federal penitentiary 1934–1963, now an NPS unit; ferry-only access from Pier 33, cell-house audio tour included.',
+    },
+    {
+      id: 'tiburon',
+      name: 'Tiburon',
+      lat: 37.8735,
+      lon: -122.4566,
+      reasons_to_visit: ['town', 'coast'],
+      blurb:
+        'Marin waterfront town on the bay; Main Street harbor dining, Angel Island–Tiburon Ferry dock, and Blackie\'s Pasture walk.',
+    },
+    {
       id: 'stinson-beach',
       name: 'Stinson Beach',
       lat: 37.9002,
@@ -170,6 +188,15 @@ export const bayAreaHub: Hub = {
         'Russian River mouth at the Pacific; harbor-seal rookery on the beach (pupping March–June) and Hwy 1 coastal overlooks.',
     },
     {
+      id: 'salt-point-fort-ross',
+      name: 'Salt Point SP / Fort Ross SHP',
+      lat: 38.5657,
+      lon: -123.3246,
+      reasons_to_visit: ['coast', 'hike', 'historic'],
+      blurb:
+        'Rugged Sonoma coast 25 mi north of Jenner; tafoni sandstone, pygmy-forest trails, and 1812 Russian-era Fort Ross stockade.',
+    },
+    {
       id: 'jack-london-shp',
       name: 'Jack London SHP (Glen Ellen)',
       lat: 38.3556,
@@ -198,6 +225,15 @@ export const bayAreaHub: Hub = {
         '2,079 acres above Berkeley; Little Farm petting barn, Regional Parks Botanic Garden, Lake Anza swim, and Nimitz Way views.',
     },
     {
+      id: 'redwood-regional',
+      name: 'Redwood Regional Park (Oakland Hills)',
+      lat: 37.8186,
+      lon: -122.1594,
+      reasons_to_visit: ['hike'],
+      blurb:
+        'Second-growth coast redwoods in the Oakland hills; French and Stream Trail loop ~7 mi, 1,500-ft gain along Redwood Creek.',
+    },
+    {
       id: 'mission-peak',
       name: 'Mission Peak (Fremont)',
       lat: 37.5123,
@@ -206,6 +242,16 @@ export const bayAreaHub: Hub = {
       reasons_to_visit: ['hike', 'viewpoint'],
       blurb:
         'Steep 6-mi out-and-back to the iconic summit pole; 2,100-ft gain over bare grassland with Bay-wide views at the top.',
+    },
+    {
+      id: 'lick-observatory',
+      name: 'Lick Observatory (Mt Hamilton)',
+      lat: 37.3414,
+      lon: -121.6429,
+      elevation_m: 1283,
+      reasons_to_visit: ['historic', 'viewpoint', 'museum'],
+      blurb:
+        '4,209-ft Mt Hamilton summit east of San Jose; 1888 36-inch Great Refractor, visitor center open Sat–Sun, Santa Clara Valley views.',
     },
     {
       id: 'livermore-valley',
