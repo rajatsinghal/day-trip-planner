@@ -23,7 +23,7 @@ export const austinHub: Hub = {
       lon: -98.2517,
       reasons_to_visit: ['waterfall', 'hike', 'paddle', 'picnic'],
       blurb:
-        'Stepped limestone cascades on the Pedernales River; 20+ miles of trails, swimming below the falls when flow is low.',
+        'Stepped limestone cascades on the Pedernales River; 40+ miles of trails; swimming only in the designated area downstream from the falls.',
     },
     {
       id: 'hamilton-pool',
@@ -48,7 +48,7 @@ export const austinHub: Hub = {
       name: 'Milton Reimers Ranch Park',
       lat: 30.3594,
       lon: -98.1558,
-      reasons_to_visit: ['hike', 'paddle', 'fish'],
+      reasons_to_visit: ['hike', 'paddle'],
       blurb:
         'Three miles of Pedernales River frontage; mountain biking, rock-climbing routes, and swimming holes.',
     },
@@ -149,7 +149,7 @@ export const austinHub: Hub = {
       lon: -98.1144,
       reasons_to_visit: ['paddle', 'hike'],
       blurb:
-        "Artesian spring feeding Texas' deepest underwater cave; swimming by reservation, short trails around the well.",
+        "Artesian spring feeding Texas' second-longest submerged cave (~140 ft deep); swimming by reservation, short trails around the well.",
     },
     {
       id: 'blue-hole-wimberley',
@@ -210,9 +210,9 @@ export const austinHub: Hub = {
       name: 'San Marcos River',
       lat: 29.8833,
       lon: -97.9414,
-      reasons_to_visit: ['paddle', 'town'],
+      reasons_to_visit: ['paddle'],
       blurb:
-        'Spring-fed 72°F river through downtown; tubing with outfitters and glass-bottom boat tours at Spring Lake.',
+        'Spring-fed 72°F river through downtown San Marcos; tubing with outfitters and glass-bottom boat tours at Spring Lake.',
     },
     {
       id: 'lbj-ranch',
@@ -276,7 +276,7 @@ export const austinHub: Hub = {
       lon: -98.3511,
       reasons_to_visit: ['historic', 'hike'],
       blurb:
-        'CCC-era park with guided walking tours through a river-carved cavern; aboveground Hwy 29 ridgeline trails.',
+        'CCC-era park with guided walking tours through a river-carved cavern; aboveground ridgeline trails in the Hill Country.',
     },
     {
       id: 'inks-lake-sp',
