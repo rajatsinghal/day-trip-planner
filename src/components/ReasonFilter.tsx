@@ -22,13 +22,13 @@ export function ReasonChips({ selected, onToggle }: ChipsProps) {
             title={meta.label}
             aria-pressed={active}
             className={
-              'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm transition-colors border ' +
+              'inline-flex flex-shrink-0 items-center justify-center gap-1 rounded-full px-2 py-1 text-xs leading-tight transition-colors border md:gap-1.5 md:px-3 md:py-1 md:text-sm ' +
               (active
                 ? 'bg-slate-900 text-white border-slate-900'
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100')
             }
           >
-            <span className="text-base leading-none" aria-hidden>
+            <span className="text-xs leading-none md:text-base" aria-hidden>
               {meta.emoji}
             </span>
             <span>{meta.label}</span>
@@ -48,7 +48,7 @@ interface CountProps {
 
 export function ReasonCount({ totalCount, matchCount, hasSelection, onClear }: CountProps) {
   return (
-    <div className="flex items-center gap-2 text-xs text-slate-500">
+    <div className="flex flex-shrink-0 items-center gap-2 text-xs text-slate-500">
       <span className="tabular-nums">
         {hasSelection
           ? `${matchCount} of ${totalCount} results`
