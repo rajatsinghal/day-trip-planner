@@ -29,7 +29,7 @@ export const bayAreaHub: Hub = {
       name: 'Muir Woods NM',
       lat: 37.8961,
       lon: -122.5817,
-      reasons_to_visit: ['hike', 'historic'],
+      reasons_to_visit: ['hike'],
       blurb:
         'Old-growth coast redwoods on 554 acres of Mt Tamalpais; parking and shuttle reservations required year-round.',
     },
@@ -41,7 +41,7 @@ export const bayAreaHub: Hub = {
       elevation_m: 784,
       reasons_to_visit: ['hike', 'viewpoint'],
       blurb:
-        '2,571-ft Marin summit; Verna Dunshee loop and short Plank Walk to the 1937 fire lookout, 360° bay views.',
+        '2,571-ft Marin summit; Verna Dunshee loop and short Plank Walk to the CCC-era Gardner Fire Lookout, 360° bay views.',
     },
     {
       id: 'marin-headlands',
@@ -95,7 +95,7 @@ export const bayAreaHub: Hub = {
       lon: -122.7999,
       reasons_to_visit: ['coast', 'wildlife', 'historic', 'hike'],
       blurb:
-        '71,000-acre seashore; 1870 lighthouse via 308 steps, winter gray-whale migration, and the Chimney Rock elephant-seal colony.',
+        '71,000-acre seashore; 1870 lighthouse via 313 steps, winter gray-whale migration, and the Chimney Rock elephant-seal colony.',
     },
     {
       id: 'point-reyes-station',
@@ -129,9 +129,9 @@ export const bayAreaHub: Hub = {
       name: 'Calistoga (Old Faithful + Petrified Forest)',
       lat: 38.5903,
       lon: -122.5965,
-      reasons_to_visit: ['town', 'historic'],
+      reasons_to_visit: ['town'],
       blurb:
-        'Geothermal upper Napa Valley town; 60-ft Old Faithful Geyser erupts every 30 min plus petrified-redwood forest nearby.',
+        'Geothermal upper Napa Valley town; 60-ft Old Faithful Geyser erupts at variable intervals (~15-30 min) plus petrified-redwood forest nearby.',
     },
     {
       id: 'healdsburg',
@@ -202,7 +202,7 @@ export const bayAreaHub: Hub = {
       name: 'Mission Peak (Fremont)',
       lat: 37.5123,
       lon: -121.8803,
-      elevation_m: 802,
+      elevation_m: 767,
       reasons_to_visit: ['hike', 'viewpoint'],
       blurb:
         'Steep 6-mi out-and-back to the iconic summit pole; 2,100-ft gain over bare grassland with Bay-wide views at the top.',
@@ -305,7 +305,7 @@ export const bayAreaHub: Hub = {
       lon: -122.0477,
       reasons_to_visit: ['garden', 'historic'],
       blurb:
-        '18-acre 1917 Japanese garden in the Saratoga hills; koi ponds, moon bridge, tea house, oldest such estate in the western hemisphere.',
+        '18-acre 1917 Japanese garden in the Saratoga hills; koi ponds, moon bridge, tea house; one of the oldest Japanese-style residential estates in the western hemisphere.',
     },
     {
       id: 'henry-cowell',
@@ -378,7 +378,7 @@ export const bayAreaHub: Hub = {
       elevation_m: 1009,
       reasons_to_visit: ['hike', 'wildlife', 'viewpoint'],
       blurb:
-        '23-million-year-old volcanic spires; High Peaks and Bear Gulch talus caves, California condor release site (50+ free-flying).',
+        '23-million-year-old volcanic spires; High Peaks and Bear Gulch talus caves; California condor release and viewing site.',
     },
     {
       id: 'san-juan-bautista',
