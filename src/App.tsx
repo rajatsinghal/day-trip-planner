@@ -307,12 +307,17 @@ function App() {
             its widest chip, so "Lake" is visibly narrower than "Waterfall". */}
         <div className="grid grid-flow-col grid-rows-2 auto-cols-[5.5rem] gap-x-1.5 gap-y-1 overflow-x-auto border-t border-slate-100 px-3 py-1 md:hidden">
           <ReasonChips selected={selectedReasons} onToggle={toggleReason} />
-          <ReasonCount
-            totalCount={rows.length}
-            matchCount={filteredRows.length}
-            hasSelection={selectedReasons.size > 0}
-            onClear={clearReasons}
-          />
+          {/* Pin the count to row 2 (col-span-2 so the "All 101 results"
+              label fits — single 88px column is too narrow). Lands in
+              the next available column after the last chip. */}
+          <div className="col-span-2 row-start-2 flex items-center">
+            <ReasonCount
+              totalCount={rows.length}
+              matchCount={filteredRows.length}
+              hasSelection={selectedReasons.size > 0}
+              onClear={clearReasons}
+            />
+          </div>
         </div>
       </header>
 
