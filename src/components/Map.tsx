@@ -104,9 +104,23 @@ export function MapView({ rows, center, selectedId, hoveredId, onSelect }: Props
       style: STYLE_URL,
       center: [center.lon, center.lat],
       zoom: 7.2,
-      attributionControl: { compact: true },
+      attributionControl: { compact: true, customAttribution: '' },
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    // MapLibre's ResizeObserver auto-adds maplibregl-compact-show on wide maps;
+    // use MutationObserver to keep it stripped until user manually expands.
+    let userExpanded = false;
+    const attribObserver = new MutationObserver(() => {
+      const el = containerRef.current?.querySelector('.maplibregl-ctrl-attrib');
+      if (el && !userExpanded) el.classList.remove('maplibregl-compact-show');
+    });
+    map.once('load', () => {
+      const el = containerRef.current?.querySelector('.maplibregl-ctrl-attrib');
+      if (!el) return;
+      el.classList.remove('maplibregl-compact-show');
+      el.addEventListener('click', () => { userExpanded = !userExpanded; });
+      attribObserver.observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
 
     new maplibregl.Marker({ element: makeOriginEl(center.name) })
       .setLngLat([center.lon, center.lat])
@@ -114,6 +128,7 @@ export function MapView({ rows, center, selectedId, hoveredId, onSelect }: Props
 
     mapRef.current = map;
     return () => {
+      attribObserver.disconnect();
       map.remove();
       mapRef.current = null;
       markersRef.current.clear();
