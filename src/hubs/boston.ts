@@ -53,6 +53,15 @@ export const bostonHub: Hub = {
         'Bearskin Neck galleries and the red fishing shack Motif No. 1 — reputed the most-painted building in America.',
     },
     {
+      id: 'halibut-point-sp',
+      name: "Halibut Point SP (Rockport)",
+      lat: 42.6897,
+      lon: -70.6307,
+      reasons_to_visit: ['coast', 'hike', 'viewpoint'],
+      blurb:
+        "Abandoned Babson Farm granite quarry at Cape Ann's northern tip; tide-pool ledges, views to NH, 1-mi loop trail.",
+    },
+    {
       id: 'gloucester',
       name: 'Gloucester (Cape Ann whale watch)',
       lat: 42.6159,
@@ -80,6 +89,15 @@ export const bostonHub: Hub = {
         'Four miles of dune-backed beach plus the 1929 Crane Estate mansion and Grand Allee; piping plover nesting area.',
     },
     {
+      id: 'russell-orchards',
+      name: 'Russell Orchards (Ipswich)',
+      lat: 42.6819,
+      lon: -70.8242,
+      reasons_to_visit: ['farm'],
+      blurb:
+        '120-acre working orchard near Crane Beach; PYO apples and berries, on-site winery with 22 varieties, farm animals.',
+    },
+    {
       id: 'newburyport',
       name: 'Newburyport',
       lat: 42.8126,
@@ -105,6 +123,15 @@ export const bostonHub: Hub = {
       reasons_to_visit: ['historic', 'hike', 'lake'],
       blurb:
         'North Bridge "shot heard \'round the world," 5-mi Battle Road, and Thoreau\'s Walden Pond 2 miles south.',
+    },
+    {
+      id: 'decordova',
+      name: 'deCordova Sculpture Park (Lincoln)',
+      lat: 42.4260,
+      lon: -71.3348,
+      reasons_to_visit: ['museum', 'garden'],
+      blurb:
+        '30-acre outdoor sculpture park on Flint\'s Pond; 50+ large-scale contemporary works, largest of its kind in New England.',
     },
     {
       id: 'lexington',
@@ -250,6 +277,15 @@ export const bostonHub: Hub = {
       reasons_to_visit: ['town', 'historic', 'museum'],
       blurb:
         'Tidewater port at the Piscataqua; Strawbery Banke\'s 10-acre outdoor museum of 40+ houses from the 1690s onward.',
+    },
+    {
+      id: 'hampton-beach',
+      name: 'Hampton Beach, NH',
+      lat: 42.9064,
+      lon: -70.8164,
+      reasons_to_visit: ['coast', 'town'],
+      blurb:
+        '3-mi Atlantic beach with the 1899 Casino Ballroom, boardwalk arcade strip, and weekly summer fireworks.',
     },
     {
       id: 'york-nubble',
