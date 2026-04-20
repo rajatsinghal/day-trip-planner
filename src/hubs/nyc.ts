@@ -104,6 +104,25 @@ export const nycHub: Hub = {
         "Washington Irving's Sunnyside, Sleepy Hollow Cemetery, Philipsburg Manor, and the Old Dutch Church; Kykuit tours suspended for 2026.",
     },
 
+    {
+      id: 'bannerman-castle',
+      name: 'Bannerman Castle (Pollepel Island)',
+      lat: 41.4553,
+      lon: -73.9889,
+      reasons_to_visit: ['island', 'historic'],
+      blurb:
+        'Ruined 1900 arsenal castle on a 6.5-acre Hudson island; seasonal boat tours from Beacon, kayak access from Cornwall.',
+    },
+    {
+      id: 'walkway-over-hudson',
+      name: 'Walkway Over the Hudson (Poughkeepsie)',
+      lat: 41.7061,
+      lon: -73.9506,
+      reasons_to_visit: ['historic', 'viewpoint'],
+      blurb:
+        "World's longest elevated pedestrian bridge at 1.28 mi; 212 ft above the Hudson on an 1889 rail span.",
+    },
+
     // --- Upper Hudson Valley / Dutchess County ---
     {
       id: 'fdr-home',
@@ -149,6 +168,15 @@ export const nycHub: Hub = {
       reasons_to_visit: ['town', 'historic'],
       blurb:
         'Former whaling port on the east bank; Warren Street antique shops, galleries, Olana viewpoint across the river.',
+    },
+    {
+      id: 'olana',
+      name: 'Olana SHS (Hudson)',
+      lat: 42.2175,
+      lon: -73.8257,
+      reasons_to_visit: ['historic', 'museum', 'viewpoint'],
+      blurb:
+        "Persian-inspired 1872 home of Hudson River School painter Frederic Church; 250-acre designed landscape with panoramic river views.",
     },
 
     // --- Shawangunks / Ulster ---
@@ -275,6 +303,15 @@ export const nycHub: Hub = {
         "409-acre Gold Coast arboretum; Tudor Revival Coe Hall, the Northeast's largest camellia collection, Italian Blue Pool garden.",
     },
     {
+      id: 'old-westbury-gardens',
+      name: 'Old Westbury Gardens (LI Gold Coast)',
+      lat: 40.7897,
+      lon: -73.5896,
+      reasons_to_visit: ['garden', 'historic', 'museum'],
+      blurb:
+        'Phipps family Gold Coast estate; 23-room Charles II-style mansion and 200 acres of formal English gardens.',
+    },
+    {
       id: 'montauk-point',
       name: 'Montauk Point Lighthouse',
       lat: 41.0712,
@@ -358,6 +395,15 @@ export const nycHub: Hub = {
       reasons_to_visit: ['town', 'historic'],
       blurb:
         'Paired river towns on the Delaware; antique row on the NJ side, galleries and the 1867 mule-drawn canal towpath on the PA side.',
+    },
+    {
+      id: 'washington-crossing',
+      name: 'Washington Crossing Historic Park',
+      lat: 40.2967,
+      lon: -74.8694,
+      reasons_to_visit: ['historic', 'picnic'],
+      blurb:
+        "Site of Washington's Christmas 1776 Delaware crossing; 500-acre PA state park with McConkey's Ferry Inn and 13 period buildings.",
     },
     {
       id: 'grounds-for-sculpture',
