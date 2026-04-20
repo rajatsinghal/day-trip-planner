@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { HUBS, HUBS_BY_ID, defaultHub, type Destination, type ReasonsToVisit } from './hubs';
 import { SideList } from './components/SideList';
 import { MapView } from './components/Map';
+import { BottomCardStrip } from './components/BottomCardStrip';
 import { ReasonChips, ReasonCount } from './components/ReasonFilter';
 import { SettingsMenu } from './components/SettingsMenu';
 import { WhenPicker } from './components/WhenPicker';
@@ -11,7 +12,6 @@ import { REASON_ORDER } from './lib/reasons_to_visit';
 import type { TempUnit } from './lib/units';
 import {
   aggregateHourlyToDaily,
-  scoreBand,
   scoreWeather,
   type DailyWeather,
   type WeatherResponse,
@@ -34,7 +34,6 @@ export interface EnrichedDestination extends Destination {
   driveMinutes: number;
   weather: DailyWeather | null;
   score: number | null;
-  band: 'great' | 'ok' | 'poor' | null;
 }
 
 type WeatherMap = Record<string, WeatherResponse>;
@@ -213,8 +212,7 @@ function App() {
       const days = wx ? aggregateHourlyToDaily(wx.hourly, startHour, endHour) : null;
       const day = days?.find((x) => x.isoDate === selectedDay) ?? null;
       const score = day ? scoreWeather(day) : null;
-      const band = score !== null ? scoreBand(score) : null;
-      return { ...d, driveMinutes, weather: day, score, band };
+      return { ...d, driveMinutes, weather: day, score };
     });
     enriched.sort((a, b) => {
       if (a.score === null && b.score === null) return a.driveMinutes - b.driveMinutes;
@@ -233,45 +231,81 @@ function App() {
 
   return (
     <div className="flex h-full flex-col bg-slate-50">
-      <header className="flex items-start gap-3 border-b border-slate-200 bg-white px-3 py-2">
-        <div className="flex flex-shrink-0 flex-col items-start gap-1 self-center">
-          <h1 className="flex items-center gap-2 leading-none">
-            <img
-              src="/logo-icon.png"
-              alt=""
-              className="h-9 w-auto"
-              width={28}
-              height={36}
-            />
-            <span className="font-display text-2xl font-extrabold tracking-tight text-slate-900">
-              DayTrip
-            </span>
-          </h1>
-          <div className="flex items-baseline gap-1 leading-none">
-            <span className="text-xs text-slate-500">in</span>
-            <div className="relative">
-              <select
-                value={selectedHubId}
-                onChange={(e) => setSelectedHubId(e.target.value)}
-                className="cursor-pointer appearance-none bg-transparent pr-4 text-sm font-bold text-slate-800 hover:text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-400"
-                aria-label="Area"
-              >
-                {HUBS.map((h) => (
-                  <option key={h.id} value={h.id}>
-                    {h.name}
-                  </option>
-                ))}
-              </select>
-              <span
-                className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[10px] text-slate-500"
-                aria-hidden
-              >
-                ▾
+      <header className="border-b border-slate-200 bg-white">
+        <div className="flex items-center gap-3 px-3 py-2 md:items-start">
+          {/* Title block: inline on phone, stacked on >=sm. The "in" word
+              drops on phone in favor of a "·" separator so the lockup reads
+              as one tidy line ([icon] DayTrip · Seattle ▾). */}
+          <div className="flex flex-shrink-0 items-center gap-2 md:flex-col md:items-start md:gap-1 md:self-center">
+            <h1 className="flex items-center gap-2 leading-none">
+              <img
+                src="/logo-icon.png"
+                alt=""
+                className="h-9 w-auto"
+                width={28}
+                height={36}
+              />
+              <span className="font-display text-2xl font-extrabold tracking-tight text-slate-900">
+                DayTrip
               </span>
+            </h1>
+            <div className="flex items-baseline gap-1 leading-none">
+              <span className="text-slate-400 md:hidden" aria-hidden>
+                ·
+              </span>
+              <span className="hidden text-xs text-slate-500 md:inline">in</span>
+              <div className="relative">
+                <select
+                  value={selectedHubId}
+                  onChange={(e) => setSelectedHubId(e.target.value)}
+                  className="cursor-pointer appearance-none bg-transparent pr-4 text-sm font-bold text-slate-800 hover:text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                  aria-label="Area"
+                >
+                  {HUBS.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.name}
+                    </option>
+                  ))}
+                </select>
+                <span
+                  className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[10px] text-slate-500"
+                  aria-hidden
+                >
+                  ▾
+                </span>
+              </div>
             </div>
           </div>
+          {/* Chips inline (>=sm only). On <sm the chips render in their own
+              row below for horizontal-scroll. */}
+          <div className="hidden min-w-0 flex-1 flex-wrap items-center gap-1.5 md:flex">
+            <ReasonChips selected={selectedReasons} onToggle={toggleReason} />
+            <ReasonCount
+              totalCount={rows.length}
+              matchCount={filteredRows.length}
+              hasSelection={selectedReasons.size > 0}
+              onClear={clearReasons}
+            />
+          </div>
+          {/* Push controls right on phone (no inline chips to fill the space). */}
+          <div className="flex-1 md:hidden" />
+          <WhenPicker
+            dayOptions={dayOptions}
+            selectedDay={selectedDay}
+            onSelectDay={setSelectedDay}
+            windowStart={displayWindowStart}
+            windowEnd={displayWindowEnd}
+            windowMin={effectiveWindowMin}
+            windowMax={WINDOW_MAX_HOUR}
+            onWindowChange={(s, e) => setWindowHours([s, e])}
+          />
+          <SettingsMenu tempUnit={tempUnit} onTempUnitChange={setTempUnit} />
         </div>
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+        {/* Phone-only chip strip: flex column-wrap so chips fill down then
+            across. max-height pins it to exactly 2 rows; overflow-x-auto
+            lets the strip scroll right. Each flex column is only as wide as
+            its widest chip, so "Lake" is visibly narrower than "Waterfall". */}
+        <div className="grid grid-flow-col grid-rows-2 auto-cols-[5.5rem] gap-x-1.5 gap-y-1 overflow-x-auto border-t border-slate-100 px-3 py-1 md:hidden">
           <ReasonChips selected={selectedReasons} onToggle={toggleReason} />
           <ReasonCount
             totalCount={rows.length}
@@ -280,17 +314,6 @@ function App() {
             onClear={clearReasons}
           />
         </div>
-        <WhenPicker
-          dayOptions={dayOptions}
-          selectedDay={selectedDay}
-          onSelectDay={setSelectedDay}
-          windowStart={displayWindowStart}
-          windowEnd={displayWindowEnd}
-          windowMin={effectiveWindowMin}
-          windowMax={WINDOW_MAX_HOUR}
-          onWindowChange={(s, e) => setWindowHours([s, e])}
-        />
-        <SettingsMenu tempUnit={tempUnit} onTempUnitChange={setTempUnit} />
       </header>
 
       {error && (
@@ -300,7 +323,7 @@ function App() {
       )}
 
       <main className="grid flex-1 min-h-0 grid-cols-1 md:grid-cols-[340px_1fr]">
-        <aside className="overflow-y-auto border-r border-slate-200 bg-white">
+        <aside className="hidden overflow-y-auto border-r border-slate-200 bg-white md:block">
           <SideList
             rows={filteredRows}
             selectedId={selectedId}
@@ -319,13 +342,35 @@ function App() {
             hoveredId={hoveredId}
             onSelect={setSelectedId}
           />
+          {/* Mobile-only carousel of destination cards. The desktop side list
+              is hidden on <md; this strip is the touch substitute. The gradient
+              wrapper lives here (not in BottomCardStrip) so the credit link can
+              stack naturally above the cards in normal flow. */}
+          <div className="md:hidden pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-white via-white/85 to-transparent pt-8">
+            <a
+              href={REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Built by Rajat Singhal — open source, contribute on GitHub"
+              aria-label="Built by Rajat Singhal. Contribute on GitHub."
+              className="pointer-events-auto ml-2 mb-1.5 inline-flex whitespace-nowrap rounded-md border border-slate-200 bg-white/95 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-slate-900"
+            >
+              <span aria-hidden>🔨</span> Rajat Singhal · Contribute ↗
+            </a>
+            <BottomCardStrip
+              rows={filteredRows}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              tempUnit={tempUnit}
+            />
+          </div>
           <a
             href={REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
             title="Built by Rajat Singhal — open source, contribute on GitHub"
             aria-label="Built by Rajat Singhal. Contribute on GitHub."
-            className="absolute bottom-2 left-2 z-10 whitespace-nowrap rounded-md border border-slate-200 bg-white/95 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-slate-900"
+            className="absolute bottom-2 left-2 z-10 hidden items-center gap-1 whitespace-nowrap rounded-md border border-slate-200 bg-white/95 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-slate-900 md:inline-flex"
           >
             <span aria-hidden>🔨</span> Rajat Singhal · Contribute ↗
           </a>
