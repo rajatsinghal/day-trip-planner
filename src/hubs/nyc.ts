@@ -28,7 +28,7 @@ export const nycHub: Hub = {
       lon: -73.9593,
       reasons_to_visit: ['town', 'historic', 'hike'],
       blurb:
-        'Walkable Main Street on the Hudson opposite West Point; antique shops, riverfront park, Hudson Highlands trailheads.',
+        'Walkable Main Street on the east bank of the Hudson; antique shops, riverfront park, Hudson Highlands trailheads.',
     },
     {
       id: 'breakneck-ridge',
@@ -62,7 +62,7 @@ export const nycHub: Hub = {
       name: 'Storm King Art Center',
       lat: 41.4251,
       lon: -74.0593,
-      reasons_to_visit: ['museum', 'garden'],
+      reasons_to_visit: ['museum'],
       blurb:
         '500-acre outdoor sculpture park with large-scale Calder, Serra, di Suvero; bike rentals, seasonal shuttle from Beacon.',
     },
@@ -168,7 +168,7 @@ export const nycHub: Hub = {
       lon: -74.1677,
       reasons_to_visit: ['hike', 'viewpoint'],
       blurb:
-        "8,000-acre Shawangunk preserve; the Labyrinth/Lemon Squeeze, world-class trad climbing at 'the Gunks,' carriage-road loops.",
+        "8,000-acre Shawangunk preserve adjacent to Mohonk Mountain House; trad climbing at 'the Gunks', carriage-road loops.",
     },
     {
       id: 'minnewaska-sp',
@@ -198,7 +198,7 @@ export const nycHub: Hub = {
       elevation_m: 1234,
       reasons_to_visit: ['ski', 'viewpoint', 'hike'],
       blurb:
-        "Vail-owned Catskills ski resort; summer Skyride gondola to a fire tower and NY's highest-elevation roller coaster.",
+        "Vail-owned Catskills ski resort; summer Skyride to NY's highest fire tower (4,040 ft) and NY Zipline Adventure Tours canopy courses.",
     },
     {
       id: 'phoenicia',
@@ -261,9 +261,9 @@ export const nycHub: Hub = {
       name: 'Sagamore Hill (Oyster Bay)',
       lat: 40.8866,
       lon: -73.5024,
-      reasons_to_visit: ['historic', 'museum', 'wildlife'],
+      reasons_to_visit: ['historic', 'museum'],
       blurb:
-        "Theodore Roosevelt's 'Summer White House' 1885–1919; 83-acre NHS with his hunting-trophy North Room, salt marsh, and beach.",
+        "Theodore Roosevelt's home 1885-1919, 'Summer White House' during his presidency; 83-acre NHS with hunting-trophy North Room and salt-marsh trail.",
     },
     {
       id: 'planting-fields',
@@ -290,7 +290,7 @@ export const nycHub: Hub = {
       lon: -72.2977,
       reasons_to_visit: ['town', 'historic', 'coast'],
       blurb:
-        'Former whaling port on the North Haven peninsula; Whaling Museum, Main Street bookshops, marina, Havens Beach walk.',
+        "Former whaling port on Long Island's South Fork; Whaling Museum, Main Street bookshops, working marina, Havens Beach walk.",
     },
     {
       id: 'greenport-north-fork',
