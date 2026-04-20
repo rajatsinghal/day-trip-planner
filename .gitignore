@@ -10,3 +10,9 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# Per-user Claude Code state (settings + temporary worktrees)
+.claude/
+
+# Screenshots dropped into repo root for review (macOS naming)
+Screenshot *.png
