@@ -85,7 +85,7 @@ export const seattleHub: Hub = {
       lat: 47.4475,
       lon: -122.4663,
       reasons_to_visit: ['island', 'farm', 'coast'],
-      blurb: 'Rural island vibe; farms, beaches, and a ferry ride.',
+      blurb: 'Rural Puget Sound island; farms, beaches, Point Robinson Lighthouse, and a ferry ride.',
     },
     {
       id: 'gig-harbor',
@@ -93,7 +93,7 @@ export const seattleHub: Hub = {
       lat: 47.329,
       lon: -122.583,
       reasons_to_visit: ['town', 'coast'],
-      blurb: 'Postcard harbor town; waterfront walks, boat rentals, cafes.',
+      blurb: 'Working harbor town on Puget Sound; waterfront walk, boat rentals, harbor-side cafes.',
     },
     {
       id: 'mt-rainier-paradise',
@@ -224,7 +224,7 @@ export const seattleHub: Hub = {
       lat: 48.0794,
       lon: -123.1007,
       reasons_to_visit: ['town', 'garden', 'farm'],
-      blurb: 'Rain-shadow town famous for lavender fields in July.',
+      blurb: 'Rain-shadow town (16 in/yr); lavender farms peak mid-July, Dungeness Valley farmland.',
     },
     {
       id: 'artist-point',
@@ -294,12 +294,11 @@ export const seattleHub: Hub = {
     },
     {
       id: 'mt-st-helens',
-      name: 'Mt St Helens (Johnston Ridge)',
-      lat: 46.275,
-      lon: -122.217,
-      elevation_m: 1280,
-      reasons_to_visit: ['volcano', 'viewpoint', 'museum', 'hike'],
-      blurb: 'Observatory looking straight into the blast zone; trails to Loowit viewpoint.',
+      name: 'Mt St Helens (Coldwater / SR-504)',
+      lat: 46.2936,
+      lon: -122.2653,
+      reasons_to_visit: ['volcano', 'viewpoint', 'hike'],
+      blurb: 'Coldwater Lake and Hummocks Trail on SR-504; Johnston Ridge Observatory closed until spring 2027 after a 2023 landslide.',
     },
     {
       id: 'chelan',
@@ -319,7 +318,7 @@ export const seattleHub: Hub = {
     },
     {
       id: 'teanaway',
-      name: 'Teanaway Community Forest',
+      name: 'Teanaway Community Forest (Cle Elum)',
       lat: 47.2743,
       lon: -120.8727,
       reasons_to_visit: ['hike'],
@@ -417,7 +416,7 @@ export const seattleHub: Hub = {
     },
     {
       id: 'lake-22',
-      name: 'Lake 22',
+      name: 'Lake 22 (Mountain Loop)',
       lat: 48.0779,
       lon: -121.7437,
       reasons_to_visit: ['hike', 'lake'],
@@ -425,7 +424,7 @@ export const seattleHub: Hub = {
     },
     {
       id: 'heather-lake',
-      name: 'Heather Lake',
+      name: 'Heather Lake (Mountain Loop)',
       lat: 48.0833,
       lon: -121.7788,
       reasons_to_visit: ['hike', 'lake'],
@@ -457,7 +456,7 @@ export const seattleHub: Hub = {
     },
     {
       id: 'boulder-river',
-      name: 'Boulder River Trail',
+      name: 'Boulder River Trail (Darrington)',
       lat: 48.2598,
       lon: -121.7959,
       reasons_to_visit: ['hike', 'waterfall'],
@@ -808,7 +807,7 @@ export const seattleHub: Hub = {
     },
     {
       id: 'gold-creek-pond',
-      name: 'Gold Creek Pond',
+      name: 'Gold Creek Pond (Snoqualmie Pass)',
       lat: 47.3921,
       lon: -121.3775,
       reasons_to_visit: ['lake', 'picnic'],
