@@ -158,12 +158,6 @@ export function scoreWeather(d: DailyWeather): number {
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
-export function scoreBand(score: number): 'great' | 'ok' | 'poor' {
-  if (score >= 72) return 'great';
-  if (score >= 48) return 'ok';
-  return 'poor';
-}
-
 // WMO weather code -> short label + emoji
 export function weatherCodeToLabel(code: number): { emoji: string; label: string } {
   if (code === 0) return { emoji: '☀️', label: 'Clear' };

@@ -14,18 +14,6 @@ interface Props {
   tempUnit: TempUnit;
 }
 
-const BAND_COLOR: Record<'great' | 'ok' | 'poor', string> = {
-  great: 'bg-emerald-500',
-  ok: 'bg-sky-500',
-  poor: 'bg-slate-400',
-};
-
-const BAND_BAR: Record<'great' | 'ok' | 'poor', string> = {
-  great: 'bg-emerald-500',
-  ok: 'bg-sky-500',
-  poor: 'bg-slate-500',
-};
-
 const HOVER_DELAY_MS = 250;
 
 export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUnit }: Props) {
@@ -96,7 +84,6 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
       <ul className="divide-y divide-slate-200">
         {rows.map((row) => {
           const isSelected = row.id === selectedId;
-          const band = row.band ?? 'poor';
           const wx = row.weather;
           const label = wx ? weatherCodeToLabel(wx.weatherCode) : null;
           const visibleReasons = row.reasons_to_visit.slice(0, 4);
@@ -112,7 +99,7 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
             >
               {isSelected && (
                 <span
-                  className={'absolute inset-y-0 left-0 w-1 ' + BAND_BAR[band]}
+                  className="absolute inset-y-0 left-0 w-1 bg-slate-900"
                   aria-hidden
                 />
               )}
@@ -129,14 +116,19 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
                 onMouseEnter={() => scheduleHover(row)}
                 onMouseLeave={cancelHover}
                 className={
-                  'w-full text-left px-3 py-2.5 flex gap-3 items-baseline transition-colors cursor-pointer ' +
+                  'w-full text-left px-3 py-2.5 flex gap-2.5 items-start transition-colors cursor-pointer ' +
                   (isSelected ? 'bg-slate-200' : 'hover:bg-slate-50')
                 }
               >
+                {/* Big leading weather emoji — at-a-glance signal. Replaces
+                    the old 3-color band dot, since "great/ok/poor" was a
+                    judgment call (snow can be the goal, not a problem). */}
                 <span
-                  className={'h-2.5 w-2.5 rounded-full flex-shrink-0 ' + BAND_COLOR[band]}
+                  className="flex-shrink-0 text-2xl leading-none"
                   aria-hidden
-                />
+                >
+                  {label ? label.emoji : '·'}
+                </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
                     <div className="flex items-baseline gap-1 min-w-0">
@@ -203,9 +195,7 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
                   )}
                   {wx && label ? (
                     <div className="text-xs text-slate-600 mt-0.5 flex items-center gap-x-2 gap-y-0.5 flex-wrap">
-                      <span>
-                        {label.emoji} {label.label}
-                      </span>
+                      <span>{label.label}</span>
                       <span className="text-slate-400">·</span>
                       <span>
                         {formatTemp(wx.tMaxC, tempUnit)} / {formatTemp(wx.tMinC, tempUnit)}
