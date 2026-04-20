@@ -280,6 +280,15 @@ export const denverHub: Hub = {
         'Foothills town with 55-acre Evergreen Lake; paddleboard rentals in summer, outdoor ice skating in winter.',
     },
     {
+      id: 'mt-falcon-park',
+      name: 'Mt Falcon Park (Morrison)',
+      lat: 39.6383,
+      lon: -105.2214,
+      reasons_to_visit: ['hike', 'viewpoint', 'historic'],
+      blurb:
+        '2,200-acre Jeffco Open Space above Morrison; 12 mi of trails past the 1909 Walker Castle ruins and Red Rocks overlooks.',
+    },
+    {
       id: 'roxborough-sp',
       name: 'Roxborough St Park',
       lat: 39.4286,
@@ -287,6 +296,15 @@ export const denverHub: Hub = {
       reasons_to_visit: ['hike', 'viewpoint', 'wildlife'],
       blurb:
         '3,300-acre park of 300-million-year-old red sandstone fins; no dogs or bikes, Fountain Valley and Carpenter Peak trails.',
+    },
+    {
+      id: 'chatfield-sp',
+      name: 'Chatfield State Park',
+      lat: 39.5381,
+      lon: -105.0872,
+      reasons_to_visit: ['lake', 'paddle', 'fish', 'hike'],
+      blurb:
+        '1,500-acre reservoir SW of Denver; sailing, SUP rentals, 26 mi of trails, resident bald eagles.',
     },
     {
       id: 'waterton-canyon',
@@ -380,6 +398,16 @@ export const denverHub: Hub = {
       reasons_to_visit: ['town', 'historic', 'hike', 'museum'],
       blurb:
         'Victorian spa town at the base of Pikes Peak; Manitou Incline stairway, cog railway depot, Cave of the Winds tours nearby.',
+    },
+    {
+      id: 'cheyenne-mtn-zoo',
+      name: 'Cheyenne Mountain Zoo',
+      lat: 38.7710,
+      lon: -104.8546,
+      elevation_m: 2046,
+      reasons_to_visit: ['zoo', 'wildlife'],
+      blurb:
+        "Highest zoo in the US at 6,714 ft; 800+ animals, hand-feed giraffes, summer sky ride above Colorado Springs.",
     },
     {
       id: 'paint-mines',
