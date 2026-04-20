@@ -84,7 +84,7 @@ export const laHub: Hub = {
       lon: -118.7574,
       reasons_to_visit: ['historic', 'hike'],
       blurb:
-        'NPS-run former movie ranch; Western Town filming set rebuilt after the 2018 Woolsey Fire, short trails.',
+        'NPS-run former movie ranch in the Santa Monica Mtns; chapel and train depot survived the 2018 Woolsey Fire, new multipurpose structures on historic footprints, hiking trails.',
     },
     {
       id: 'point-mugu-sp',
@@ -97,15 +97,6 @@ export const laHub: Hub = {
     },
 
     // ========== San Gabriel Mountains / Angeles NF ==========
-    {
-      id: 'eaton-canyon',
-      name: 'Eaton Canyon Falls (Pasadena)',
-      lat: 34.1816,
-      lon: -118.0966,
-      reasons_to_visit: ['waterfall', 'hike'],
-      blurb:
-        '3.5-mi canyon walk to a 40-ft waterfall off Altadena; check USFS closure status after the 2025 Eaton Fire.',
-    },
     {
       id: 'switzer-falls',
       name: 'Switzer Falls (Angeles NF)',
@@ -130,7 +121,7 @@ export const laHub: Hub = {
       lat: 34.2267,
       lon: -118.0583,
       elevation_m: 1742,
-      reasons_to_visit: ['viewpoint', 'historic', 'museum', 'hike'],
+      reasons_to_visit: ['viewpoint', 'historic', 'hike'],
       blurb:
         '100-inch Hooker telescope, astronomical museum, and antenna farm on a 5,715-ft San Gabriel summit.',
     },
@@ -221,13 +212,13 @@ export const laHub: Hub = {
       name: 'Indian Canyons (Palm Springs)',
       lat: 33.7483,
       lon: -116.5422,
-      reasons_to_visit: ['hike', 'historic', 'waterfall'],
+      reasons_to_visit: ['hike', 'historic'],
       blurb:
         'Agua Caliente tribal land; Palm, Andreas, and Murray canyons — the world\'s largest California fan palm oasis.',
     },
     {
       id: 'joshua-tree-hidden-valley',
-      name: 'Joshua Tree Nl Park (Hidden Valley)',
+      name: 'Joshua Tree NP (Hidden Valley)',
       lat: 33.9886,
       lon: -116.1658,
       elevation_m: 1240,
@@ -275,7 +266,7 @@ export const laHub: Hub = {
     },
     {
       id: 'channel-islands',
-      name: 'Channel Islands Nl Park (Ventura)',
+      name: 'Channel Islands NP (Ventura)',
       lat: 34.2469,
       lon: -119.2609,
       reasons_to_visit: ['island', 'wildlife', 'hike', 'paddle'],
@@ -348,15 +339,6 @@ export const laHub: Hub = {
         '1,780-acre state reserve west of Lancaster; California poppies peak late March through mid-April.',
     },
     {
-      id: 'exotic-feline',
-      name: 'Exotic Feline Breeding Ctr (Rosamond)',
-      lat: 34.8772,
-      lon: -118.1978,
-      reasons_to_visit: ['zoo', 'wildlife'],
-      blurb:
-        'Small nonprofit conservation center in the Antelope Valley; 70+ endangered cats including snow leopards and ocelots.',
-    },
-    {
       id: 'reagan-library',
       name: 'Reagan Library (Simi Valley)',
       lat: 34.2601,
@@ -421,7 +403,7 @@ export const laHub: Hub = {
       lon: -117.8911,
       reasons_to_visit: ['coast', 'town'],
       blurb:
-        '1.5-mi bayfront loop around Balboa Island; $1.50 auto ferry to the Peninsula Fun Zone and its 1936 Ferris wheel.',
+        '1.5-mi bayfront loop around Balboa Island; auto ferry to the Peninsula Fun Zone and its 1936 Ferris wheel.',
     },
     {
       id: 'nixon-library',
@@ -437,7 +419,7 @@ export const laHub: Hub = {
       name: 'Temecula Valley Wine Country',
       lat: 33.5169,
       lon: -117.0994,
-      reasons_to_visit: ['town', 'farm'],
+      reasons_to_visit: ['town'],
       blurb:
         '40+ wineries on rolling Riverside County hills; De Portola and Rancho California wine trails, hot-air balloon rides.',
     },
