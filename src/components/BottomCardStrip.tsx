@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { EnrichedDestination } from '../App';
 import { formatDriveTime } from '../lib/geo';
 import { REASON_META } from '../lib/reasons_to_visit';
-import { formatTemp, type TempUnit } from '../lib/units';
+import { formatTemp, formatWind, type TempUnit } from '../lib/units';
 import { weatherCodeToLabel } from '../lib/weather';
 
 interface Props {
@@ -121,8 +121,7 @@ export function BottomCardStrip({ rows, selectedId, onSelect, tempUnit }: Props)
                 </div>
                 {wx && label ? (
                   <div className="text-xs text-slate-600">
-                    {label.label} · {formatTemp(wx.tMaxC, tempUnit)}/
-                    {formatTemp(wx.tMinC, tempUnit)} · Rain {wx.precipProb}%
+                    {formatTemp(wx.tMaxC, tempUnit)}/{formatTemp(wx.tMinC, tempUnit)} · Rain {wx.precipProb}% · Wind {formatWind(wx.windMaxKmh, tempUnit)}
                   </div>
                 ) : (
                   <div className="text-xs text-slate-400">No forecast</div>
