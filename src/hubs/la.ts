@@ -217,6 +217,15 @@ export const laHub: Hub = {
         'Agua Caliente tribal land; Palm, Andreas, and Murray canyons — the world\'s largest California fan palm oasis.',
     },
     {
+      id: 'tahquitz-canyon',
+      name: 'Tahquitz Canyon (Palm Springs)',
+      lat: 33.8167,
+      lon: -116.5519,
+      reasons_to_visit: ['hike', 'waterfall', 'historic'],
+      blurb:
+        '2-mi Agua Caliente ranger-led loop to a 60-ft seasonal waterfall; Cahuilla rock art and ancient irrigation systems.',
+    },
+    {
       id: 'joshua-tree-hidden-valley',
       name: 'Joshua Tree NP (Hidden Valley)',
       lat: 33.9886,
@@ -290,6 +299,15 @@ export const laHub: Hub = {
       reasons_to_visit: ['town', 'coast', 'historic'],
       blurb:
         '"American Riviera" 90 mi up the coast; 1872 Stearns Wharf, Spanish Revival courthouse tower, 1786 Mission.',
+    },
+    {
+      id: 'carpinteria-bluffs',
+      name: 'Carpinteria Bluffs Seal Rookery',
+      lat: 34.3869,
+      lon: -119.5228,
+      reasons_to_visit: ['coast', 'wildlife', 'hike'],
+      blurb:
+        '~100 harbor seals viewable year-round from the Coastal Vista Trail bluffs; beach closed Dec 1–May 31 for pupping.',
     },
     {
       id: 'solvang',
@@ -386,6 +404,15 @@ export const laHub: Hub = {
       reasons_to_visit: ['coast', 'town', 'wildlife'],
       blurb:
         'Seven-mile string of coves and headlands; Heisler Park tidepools, Treasure Island Beach, downtown art galleries.',
+    },
+    {
+      id: 'abalone-cove',
+      name: 'Abalone Cove / Point Vicente (RPV)',
+      lat: 33.738,
+      lon: -118.3716,
+      reasons_to_visit: ['coast', 'hike', 'wildlife'],
+      blurb:
+        'Palos Verdes pocket coves with sea stacks, three sea caves, and tidepools; Point Vicente bluffs for gray-whale watching.',
     },
     {
       id: 'san-juan-capistrano',
