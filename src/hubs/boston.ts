@@ -68,16 +68,16 @@ export const bostonHub: Hub = {
       lon: -70.7830,
       reasons_to_visit: ['town'],
       blurb:
-        '"America\'s Antique Capital" with 30+ shops in one mile; Woodman\'s claims to have invented the fried clam here in 1914.',
+        '"America\'s Antique Capital" with 30+ shops in one mile; Woodman\'s claims to have invented the fried clam here in 1916.',
     },
     {
       id: 'crane-beach',
       name: 'Crane Beach / Castle Hill (Ipswich)',
       lat: 42.6836,
       lon: -70.7673,
-      reasons_to_visit: ['coast', 'hike', 'historic'],
+      reasons_to_visit: ['coast', 'historic', 'wildlife'],
       blurb:
-        'Four miles of dune-backed beach plus the 1929 Crane Estate mansion and Grand Allee ending at an Atlantic bluff.',
+        'Four miles of dune-backed beach plus the 1929 Crane Estate mansion and Grand Allee; piping plover nesting area.',
     },
     {
       id: 'newburyport',
@@ -139,7 +139,7 @@ export const bostonHub: Hub = {
       lat: 42.2110,
       lon: -71.1147,
       elevation_m: 194,
-      reasons_to_visit: ['hike', 'viewpoint', 'ski'],
+      reasons_to_visit: ['hike', 'viewpoint'],
       blurb:
         '7,000-acre reservation 10 mi south of downtown; 125 mi of trails, Great Blue Hill summit, 1885 weather observatory.',
     },
@@ -177,7 +177,7 @@ export const bostonHub: Hub = {
       lon: -70.9867,
       reasons_to_visit: ['island', 'coast', 'hike'],
       blurb:
-        '30-min ferry from Long Wharf to a 121-acre former dump rebuilt with Big Dig fill; beaches, 5 mi of paths, skyline views.',
+        '30-min ferry from Long Wharf to a 114-acre former dump rebuilt with Big Dig fill; beaches, 5 mi of paths, skyline views.',
     },
     {
       id: 'georges-island',
@@ -387,7 +387,7 @@ export const bostonHub: Hub = {
       elevation_m: 1064,
       reasons_to_visit: ['hike', 'viewpoint'],
       blurb:
-        "Massachusetts' highest peak at 3,491 ft; summit road, War Memorial tower, and Appalachian Trail through the reservation.",
+        "Massachusetts' highest peak at 3,489 ft; summit road, War Memorial tower, and Appalachian Trail through the reservation.",
     },
   ],
 };
