@@ -28,7 +28,10 @@ export function ReasonChips({ selected, onToggle }: ChipsProps) {
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100')
             }
           >
-            <span className="text-xs leading-none md:text-base" aria-hidden>
+            <span
+              className="flex h-[1.25em] w-[1.25em] flex-shrink-0 items-center justify-center text-xs md:text-base"
+              aria-hidden
+            >
               {meta.emoji}
             </span>
             <span>{meta.label}</span>
