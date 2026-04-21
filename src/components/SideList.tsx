@@ -232,7 +232,7 @@ function HoverCard({ row, top, left, tempUnit }: HoverCardProps) {
   const wx = row.weather;
   const wxLabel = wx ? weatherCodeToLabel(wx.weatherCode) : null;
   // Clamp to viewport: if the card would overflow the right edge, pin it to 8px margin.
-  const width = 340;
+  const width = 360;
   const margin = 8;
   const maxLeft = window.innerWidth - width - margin;
   const clampedLeft = Math.min(left, maxLeft);
@@ -244,36 +244,33 @@ function HoverCard({ row, top, left, tempUnit }: HoverCardProps) {
       className="pointer-events-none fixed z-40 rounded-lg border border-slate-200 bg-white p-3 shadow-xl"
       style={{ top: clampedTop, left: clampedLeft, width }}
     >
-      {wx && wxLabel ? (
-        <div className="flex items-start gap-3">
-          <span className="flex-shrink-0 text-4xl leading-none" aria-hidden>
-            {wxLabel.emoji}
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-lg font-semibold text-slate-900 tabular-nums">
-                {formatTemp(wx.tMaxC, tempUnit)} / {formatTemp(wx.tMinC, tempUnit)}
-              </span>
-              <span className="whitespace-nowrap text-xs text-slate-500">
-                {formatDriveTime(row.driveMinutes)}
-              </span>
-            </div>
-            <div className="mt-0.5 text-xs text-slate-600">
-              {wxLabel.label} · Rain {wx.precipProb}% · Wind{' '}
-              {formatWind(wx.windMaxKmh, tempUnit)}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-baseline justify-between gap-2">
-          <span className="text-xs text-slate-400">No forecast</span>
+      <div className="flex items-start gap-3">
+        <span className="flex-shrink-0 text-3xl" aria-hidden>
+          {wxLabel ? wxLabel.emoji : '·'}
+        </span>
+        <div className="flex min-w-0 flex-1 items-baseline justify-between gap-2">
+          <h3 className="font-semibold leading-snug text-slate-900">{row.name}</h3>
           <span className="whitespace-nowrap text-xs text-slate-500">
             {formatDriveTime(row.driveMinutes)}
           </span>
         </div>
+      </div>
+      {wx && wxLabel ? (
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-600">
+          <span>{wxLabel.label}</span>
+          <span className="text-slate-400">·</span>
+          <span>
+            {formatTemp(wx.tMaxC, tempUnit)} / {formatTemp(wx.tMinC, tempUnit)}
+          </span>
+          <span className="text-slate-400">·</span>
+          <span>Rain {wx.precipProb}%</span>
+          <span className="text-slate-400">·</span>
+          <span>Wind {formatWind(wx.windMaxKmh, tempUnit)}</span>
+        </div>
+      ) : (
+        <div className="mt-2 text-xs text-slate-400">No forecast</div>
       )}
-      <div className="mt-2.5 font-semibold leading-snug text-slate-900">{row.name}</div>
-      <p className="mt-1 text-sm leading-snug text-slate-700">{row.blurb}</p>
+      <p className="mt-2 text-sm leading-snug text-slate-700">{row.blurb}</p>
       {row.reasons_to_visit.length > 0 && (
         <div className="mt-2.5 flex flex-wrap gap-1.5">
           {row.reasons_to_visit.map((r) => (
