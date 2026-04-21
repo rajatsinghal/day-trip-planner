@@ -86,7 +86,7 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
           const isSelected = row.id === selectedId;
           const wx = row.weather;
           const label = wx ? weatherCodeToLabel(wx.weatherCode) : null;
-          const visibleReasons = row.reasons_to_visit.slice(0, 4);
+          const visibleReasons = row.reasons_to_visit.slice(0, 6);
           const extraReasonCount = row.reasons_to_visit.length - visibleReasons.length;
           return (
             <li
