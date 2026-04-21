@@ -195,8 +195,6 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
                   )}
                   {wx && label ? (
                     <div className="text-xs text-slate-600 mt-0.5 flex items-center gap-x-2 gap-y-0.5 flex-wrap">
-                      <span>{label.label}</span>
-                      <span className="text-slate-400">·</span>
                       <span>
                         {formatTemp(wx.tMaxC, tempUnit)} / {formatTemp(wx.tMinC, tempUnit)}
                       </span>
