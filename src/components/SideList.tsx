@@ -228,7 +228,7 @@ function HoverCard({ row, top, left, tempUnit }: HoverCardProps) {
   const wx = row.weather;
   const wxLabel = wx ? weatherCodeToLabel(wx.weatherCode) : null;
   // Clamp to viewport: if the card would overflow the right edge, pin it to 8px margin.
-  const width = 300;
+  const width = 340;
   const margin = 8;
   const maxLeft = window.innerWidth - width - margin;
   const clampedLeft = Math.min(left, maxLeft);
@@ -240,20 +240,36 @@ function HoverCard({ row, top, left, tempUnit }: HoverCardProps) {
       className="pointer-events-none fixed z-40 rounded-lg border border-slate-200 bg-white p-3 shadow-xl"
       style={{ top: clampedTop, left: clampedLeft, width }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="font-semibold text-slate-900 leading-snug">{row.name}</div>
-        <span className="text-xs text-slate-500 flex-shrink-0 whitespace-nowrap">
-          {formatDriveTime(row.driveMinutes)}
-        </span>
-      </div>
-      {wx && wxLabel && (
-        <div className="mt-1.5 text-xs text-slate-600">
-          {wxLabel.emoji} {wxLabel.label} · {formatTemp(wx.tMaxC, tempUnit)} /{' '}
-          {formatTemp(wx.tMinC, tempUnit)} · Rain {wx.precipProb}% · Wind{' '}
-          {formatWind(wx.windMaxKmh, tempUnit)}
+      {wx && wxLabel ? (
+        <div className="flex items-start gap-3">
+          <span className="flex-shrink-0 text-4xl leading-none" aria-hidden>
+            {wxLabel.emoji}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-lg font-semibold text-slate-900 tabular-nums">
+                {formatTemp(wx.tMaxC, tempUnit)} / {formatTemp(wx.tMinC, tempUnit)}
+              </span>
+              <span className="whitespace-nowrap text-xs text-slate-500">
+                {formatDriveTime(row.driveMinutes)}
+              </span>
+            </div>
+            <div className="mt-0.5 text-xs text-slate-600">
+              {wxLabel.label} · Rain {wx.precipProb}% · Wind{' '}
+              {formatWind(wx.windMaxKmh, tempUnit)}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-xs text-slate-400">No forecast</span>
+          <span className="whitespace-nowrap text-xs text-slate-500">
+            {formatDriveTime(row.driveMinutes)}
+          </span>
         </div>
       )}
-      <p className="mt-2 text-sm leading-snug text-slate-700">{row.blurb}</p>
+      <div className="mt-2.5 font-semibold leading-snug text-slate-900">{row.name}</div>
+      <p className="mt-1 text-sm leading-snug text-slate-700">{row.blurb}</p>
       {row.reasons_to_visit.length > 0 && (
         <div className="mt-2.5 flex flex-wrap gap-1.5">
           {row.reasons_to_visit.map((r) => (
@@ -261,7 +277,10 @@ function HoverCard({ row, top, left, tempUnit }: HoverCardProps) {
               key={r}
               className="inline-flex items-center gap-1.5 rounded-full bg-slate-200 px-2.5 py-1 text-xs text-slate-800"
             >
-              <span className="text-base leading-none" aria-hidden>
+              <span
+                className="flex h-[1.25em] w-[1.25em] flex-shrink-0 items-center justify-center text-base"
+                aria-hidden
+              >
                 {REASON_META[r].emoji}
               </span>
               {REASON_META[r].label}
