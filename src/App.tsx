@@ -232,7 +232,7 @@ function App() {
   return (
     <div className="flex h-full flex-col bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
-        <div className="flex items-center gap-3 px-3 py-2 md:items-start">
+        <div className="flex items-center gap-3 px-3 py-2 lg:items-start">
           {/* Title block: inline on phone, stacked on >=sm. The "in" word
               drops on phone in favor of a "·" separator so the lockup reads
               as one tidy line ([icon] DayTrip · Seattle ▾). */}
@@ -276,9 +276,9 @@ function App() {
               </div>
             </div>
           </div>
-          {/* Chips inline (>=sm only). On <sm the chips render in their own
-              row below for horizontal-scroll. */}
-          <div className="hidden min-w-0 flex-1 flex-wrap items-center gap-1.5 md:flex">
+          {/* Chips inline only at lg+. Below lg they render on their own row
+              (tablet: flex-wrap; phone: 2-row horizontal-scroll grid). */}
+          <div className="hidden min-w-0 flex-1 flex-wrap items-center gap-1.5 lg:flex">
             <ReasonChips selected={selectedReasons} onToggle={toggleReason} />
             <ReasonCount
               totalCount={rows.length}
@@ -287,8 +287,8 @@ function App() {
               onClear={clearReasons}
             />
           </div>
-          {/* Push controls right on phone (no inline chips to fill the space). */}
-          <div className="flex-1 md:hidden" />
+          {/* Push controls right when chips aren't inline (phone + tablet). */}
+          <div className="flex-1 lg:hidden" />
           <WhenPicker
             dayOptions={dayOptions}
             selectedDay={selectedDay}
@@ -318,6 +318,19 @@ function App() {
               onClear={clearReasons}
             />
           </div>
+        </div>
+        {/* Tablet-only chip row (md–lg): chips wrap naturally in a full-width
+            band below the header. Keeps the header row short (logo + When +
+            settings) so chips no longer crowd it into 5+ rows at ~768px.
+            At lg+ chips move back inline with the header. */}
+        <div className="hidden flex-wrap items-center gap-1.5 border-t border-slate-100 px-3 py-1.5 md:flex lg:hidden">
+          <ReasonChips selected={selectedReasons} onToggle={toggleReason} />
+          <ReasonCount
+            totalCount={rows.length}
+            matchCount={filteredRows.length}
+            hasSelection={selectedReasons.size > 0}
+            onClear={clearReasons}
+          />
         </div>
       </header>
 
