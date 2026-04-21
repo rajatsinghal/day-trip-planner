@@ -124,7 +124,7 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
                     the old 3-color band dot, since "great/ok/poor" was a
                     judgment call (snow can be the goal, not a problem). */}
                 <span
-                  className="flex-shrink-0 text-2xl leading-none"
+                  className="flex-shrink-0 text-2xl"
                   aria-hidden
                 >
                   {label ? label.emoji : '·'}
