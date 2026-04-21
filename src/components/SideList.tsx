@@ -244,15 +244,15 @@ function HoverCard({ row, top, left, tempUnit }: HoverCardProps) {
       className="pointer-events-none fixed z-40 rounded-lg border border-slate-200 bg-white p-3 shadow-xl"
       style={{ top: clampedTop, left: clampedLeft, width }}
     >
-      <div className="flex items-center gap-3">
-        <span className="flex-shrink-0 text-3xl leading-none" aria-hidden>
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 flex-shrink-0 text-3xl" aria-hidden>
           {wxLabel ? wxLabel.emoji : '·'}
         </span>
-        <div className="flex min-w-0 flex-1 items-baseline justify-between gap-2">
-          <h3 className="font-semibold leading-snug text-slate-900">{row.name}</h3>
-          <span className="whitespace-nowrap text-xs text-slate-500">
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate font-semibold text-slate-900">{row.name}</h3>
+          <div className="text-xs text-slate-500">
             {formatDriveTime(row.driveMinutes)}
-          </span>
+          </div>
         </div>
       </div>
       {wx && wxLabel ? (

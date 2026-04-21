@@ -89,15 +89,15 @@ export function MobileDetailSheet({ row, onClose, tempUnit }: Props) {
         </div>
 
         <div className="px-4 pb-6">
-          <div className="flex items-center gap-3">
-            <span className="flex-shrink-0 text-4xl leading-none" aria-hidden>
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex-shrink-0 text-3xl" aria-hidden>
               {wxLabel ? wxLabel.emoji : '·'}
             </span>
-            <div className="flex min-w-0 flex-1 items-baseline justify-between gap-2">
-              <h2 className="font-semibold leading-snug text-slate-900">{row.name}</h2>
-              <span className="whitespace-nowrap text-xs text-slate-500">
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate font-semibold text-slate-900">{row.name}</h2>
+              <div className="text-xs text-slate-500">
                 {formatDriveTime(row.driveMinutes)}
-              </span>
+              </div>
             </div>
           </div>
           {wx && wxLabel ? (
