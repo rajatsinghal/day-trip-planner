@@ -244,8 +244,8 @@ function HoverCard({ row, top, left, tempUnit }: HoverCardProps) {
       className="pointer-events-none fixed z-40 rounded-lg border border-slate-200 bg-white p-3 shadow-xl"
       style={{ top: clampedTop, left: clampedLeft, width }}
     >
-      <div className="flex items-start gap-3">
-        <span className="flex-shrink-0 text-3xl" aria-hidden>
+      <div className="flex items-center gap-3">
+        <span className="flex-shrink-0 text-3xl leading-none" aria-hidden>
           {wxLabel ? wxLabel.emoji : '·'}
         </span>
         <div className="flex min-w-0 flex-1 items-baseline justify-between gap-2">
