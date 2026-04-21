@@ -9,6 +9,7 @@ interface Props {
   rows: EnrichedDestination[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onOpenDetail: (id: string) => void;
   tempUnit: TempUnit;
 }
 
@@ -20,7 +21,13 @@ const SCROLL_SETTLE_MS = 150;
 //   - Swipe to a card → that destination is selected (map flies to its pin).
 // The strip is the mobile substitute for the desktop side list — same data,
 // same selection state, just a horizontal lens instead of a vertical one.
-export function BottomCardStrip({ rows, selectedId, onSelect, tempUnit }: Props) {
+export function BottomCardStrip({
+  rows,
+  selectedId,
+  onSelect,
+  onOpenDetail,
+  tempUnit,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   // The id we most recently scrolled to programmatically. Used to suppress the
   // scroll-settled listener from firing onSelect on the same card we just
@@ -97,7 +104,14 @@ export function BottomCardStrip({ rows, selectedId, onSelect, tempUnit }: Props)
             <div
               key={row.id}
               data-card-id={row.id}
-              onClick={() => onSelect(row.id)}
+              onClick={() => {
+                // Tap behaves like Google/Apple Maps cards: select the pin
+                // (centers this card, flies the map there) AND open the
+                // detail sheet. Swipe-to-center still only selects — the
+                // scroll-settle handler doesn't call onOpenDetail.
+                onSelect(row.id);
+                onOpenDetail(row.id);
+              }}
               className={
                 'flex w-[260px] flex-shrink-0 snap-center cursor-pointer gap-2.5 rounded-lg border bg-white p-3 shadow-md transition-shadow ' +
                 (isSelected ? 'border-slate-900' : 'border-slate-200')

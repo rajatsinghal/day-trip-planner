@@ -3,6 +3,7 @@ import { HUBS, HUBS_BY_ID, defaultHub, type Destination, type ReasonsToVisit } f
 import { SideList } from './components/SideList';
 import { MapView } from './components/Map';
 import { BottomCardStrip } from './components/BottomCardStrip';
+import { MobileDetailSheet } from './components/MobileDetailSheet';
 import { ReasonChips, ReasonCount } from './components/ReasonFilter';
 import { SettingsMenu } from './components/SettingsMenu';
 import { WhenPicker } from './components/WhenPicker';
@@ -77,6 +78,8 @@ function App() {
   const [retrying, setRetrying] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  // Mobile-only: which destination's detail sheet is open (or null).
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [tempUnit, setTempUnit] = useState<TempUnit>(() => {
     // US-targeted app (NWS-only data), so default to F. Existing visitors
     // who explicitly picked C keep it; everyone else lands on °F + mph.
@@ -307,6 +310,14 @@ function App() {
     return rows.filter((r) => r.reasons_to_visit.some((x) => selectedReasons.has(x)));
   }, [rows, selectedReasons]);
 
+  // Resolve the open-detail destination fresh each render so weather updates
+  // reflect in the sheet. If the dest is no longer in the filtered list
+  // (user toggled a filter while the sheet was open), close the sheet.
+  const detailRow = detailId ? filteredRows.find((r) => r.id === detailId) : undefined;
+  useEffect(() => {
+    if (detailId && !detailRow) setDetailId(null);
+  }, [detailId, detailRow]);
+
   return (
     <div className="flex h-full flex-col bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
@@ -469,6 +480,7 @@ function App() {
               rows={filteredRows}
               selectedId={selectedId}
               onSelect={setSelectedId}
+              onOpenDetail={setDetailId}
               tempUnit={tempUnit}
             />
           </div>
@@ -484,6 +496,13 @@ function App() {
           </a>
         </section>
       </main>
+      {detailRow && (
+        <MobileDetailSheet
+          row={detailRow}
+          onClose={() => setDetailId(null)}
+          tempUnit={tempUnit}
+        />
+      )}
     </div>
   );
 }
