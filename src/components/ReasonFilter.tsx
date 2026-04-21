@@ -22,7 +22,7 @@ export function ReasonChips({ selected, onToggle }: ChipsProps) {
             title={meta.label}
             aria-pressed={active}
             className={
-              'inline-flex flex-shrink-0 items-center justify-center gap-1 rounded-full px-2 py-1 text-xs leading-tight transition-colors border md:gap-1.5 md:px-3 md:py-1 md:text-sm ' +
+              'inline-flex flex-shrink-0 items-center justify-center gap-1 rounded-full px-2 py-1 text-xs leading-tight transition-colors border md:gap-1.5 md:px-[0.7rem] md:py-1 md:text-sm ' +
               (active
                 ? 'bg-slate-900 text-white border-slate-900'
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100')
