@@ -70,8 +70,8 @@ export function WhenPicker({
         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400"
       >
         <span className="font-semibold">{activeDay.label}</span>
-        <span className="hidden text-slate-400 min-[480px]:inline">·</span>
-        <span className="hidden tabular-nums min-[480px]:inline">{summaryHours}</span>
+        <span className="hidden text-slate-400 min-[520px]:inline">·</span>
+        <span className="hidden tabular-nums min-[520px]:inline">{summaryHours}</span>
         <span className="ml-0.5 text-xs text-slate-400" aria-hidden>
           ▾
         </span>
