@@ -178,11 +178,15 @@ export function SideList({ rows, selectedId, onSelect, onHover, loading, tempUni
                   </div>
                   {visibleReasons.length > 0 && (
                     <div
-                      className="mt-0.5 flex items-center gap-1.5 text-sm"
+                      className="mt-0.5 flex items-center gap-1.5 text-base"
                       aria-hidden
                     >
                       {visibleReasons.map((r) => (
-                        <span key={r} title={REASON_META[r].label}>
+                        <span
+                          key={r}
+                          title={REASON_META[r].label}
+                          className="flex h-[1.25em] w-[1.25em] flex-shrink-0 items-center justify-center"
+                        >
                           {REASON_META[r].emoji}
                         </span>
                       ))}
