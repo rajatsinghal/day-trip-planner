@@ -92,7 +92,8 @@ function App() {
   });
   const [weatherByDest, setWeatherByDest] = useState<WeatherMap>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [failedIds, setFailedIds] = useState<Set<string>>(new Set());
+  const [retrying, setRetrying] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [tempUnit, setTempUnit] = useState<TempUnit>(() => {
@@ -195,17 +196,19 @@ function App() {
     const controller = new AbortController();
     let cancelled = false;
     setLoading(true);
-    setError(null);
-    // Reset weather when the hub changes — the previous hub's data is for
-    // a different set of destinations and would briefly show in the list.
+    // Reset weather and any prior failures when the hub changes — the
+    // previous hub's data is for a different set of destinations.
     setWeatherByDest({});
+    setFailedIds(new Set());
 
     // Concurrency-limited worker pool. Each destination needs a two-step NWS
     // fetch, so we pull from a shared queue with N workers rather than firing
     // all 80+ at once. Results stream into state per-destination — the list
-    // and map populate incrementally as each forecast lands.
+    // and map populate incrementally as each forecast lands. Per-destination
+    // failures are tracked in failedIds and surfaced via the retry banner;
+    // a global error banner isn't needed because the banner renders whenever
+    // any destination fails (including the all-failed case).
     const queue = [...selectedHub.destinations];
-    let successes = 0;
     let finishedWorkers = 0;
 
     async function worker() {
@@ -215,19 +218,22 @@ function App() {
         try {
           const wx = await fetchNwsForDest(dest, controller.signal);
           if (cancelled) return;
-          successes += 1;
           setWeatherByDest((prev) => ({ ...prev, [dest.id]: wx }));
         } catch (e) {
           if ((e as Error).name === 'AbortError') return;
           console.warn(`NWS fetch failed for ${dest.id}:`, e);
+          if (!cancelled) {
+            setFailedIds((prev) => {
+              const next = new Set(prev);
+              next.add(dest.id);
+              return next;
+            });
+          }
         }
       }
       finishedWorkers += 1;
       if (finishedWorkers === FETCH_CONCURRENCY && !cancelled) {
         setLoading(false);
-        if (successes === 0) {
-          setError('Could not load weather data. Check your internet connection.');
-        }
       }
     }
 
@@ -240,6 +246,45 @@ function App() {
       controller.abort();
     };
   }, [selectedHub]);
+
+  // Retry only the destinations that previously failed. Runs a fresh worker
+  // pool against a queue of just the failed IDs — successful destinations
+  // don't get re-fetched. On success an ID is removed from failedIds, which
+  // naturally hides the banner when the set empties.
+  async function retryFailed() {
+    if (retrying || failedIds.size === 0) return;
+    setRetrying(true);
+    const failed = selectedHub.destinations.filter((d) => failedIds.has(d.id));
+    const queue = [...failed];
+    const controller = new AbortController();
+    const workerCount = Math.min(FETCH_CONCURRENCY, queue.length);
+    const workers: Promise<void>[] = [];
+    for (let i = 0; i < workerCount; i++) {
+      workers.push(
+        (async () => {
+          while (queue.length > 0 && !controller.signal.aborted) {
+            const dest = queue.shift();
+            if (!dest) break;
+            try {
+              const wx = await fetchNwsForDest(dest, controller.signal);
+              setWeatherByDest((prev) => ({ ...prev, [dest.id]: wx }));
+              setFailedIds((prev) => {
+                if (!prev.has(dest.id)) return prev;
+                const next = new Set(prev);
+                next.delete(dest.id);
+                return next;
+              });
+            } catch (e) {
+              if ((e as Error).name === 'AbortError') return;
+              console.warn(`NWS retry failed for ${dest.id}:`, e);
+            }
+          }
+        })(),
+      );
+    }
+    await Promise.all(workers);
+    setRetrying(false);
+  }
 
   // Dynamic window clamp: when "Today" is the selected day, the start of the
   // user's preferred trip window can be in the past (e.g. it's 2 PM but the
@@ -389,9 +434,21 @@ function App() {
         </div>
       </header>
 
-      {error && (
-        <div className="bg-rose-50 border-b border-rose-200 px-4 py-2 text-sm text-rose-700">
-          {error}
+      {failedIds.size > 0 && !loading && (
+        <div className="flex items-center justify-between gap-3 border-b border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
+          <span>
+            {failedIds.size === selectedHub.destinations.length
+              ? "Couldn't load weather for any destination."
+              : `${failedIds.size} destination${failedIds.size === 1 ? '' : 's'} couldn't load.`}
+          </span>
+          <button
+            type="button"
+            onClick={retryFailed}
+            disabled={retrying}
+            className="flex-shrink-0 rounded-md border border-rose-300 bg-white px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+          >
+            {retrying ? 'Retrying…' : 'Retry'}
+          </button>
         </div>
       )}
 
