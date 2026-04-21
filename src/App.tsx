@@ -23,8 +23,6 @@ const WINDOW_KEY = 'dtp.windowHours';
 const REASONS_KEY = 'dtp.selectedReasons';
 const HUB_KEY = 'dtp.selectedHub';
 const HUB_PARAM = 'hub';
-const DAY_PARAM = 'day';
-const WINDOW_PARAM = 'window';
 const REASONS_PARAM = 'reasons';
 const FETCH_CONCURRENCY = 8;
 const WINDOW_MIN_HOUR = 4;
@@ -32,19 +30,6 @@ const WINDOW_MAX_HOUR = 22;
 const DEFAULT_WINDOW: [number, number] = [10, 16];
 const VALID_REASONS = new Set<ReasonsToVisit>(REASON_ORDER);
 const REPO_URL = 'https://github.com/rajatsinghal/day-trip-planner';
-
-// Parse a `start-end` window string like "10-16" into a valid hour pair,
-// or null if the value is malformed / out of range.
-function parseWindowParam(raw: string | null): [number, number] | null {
-  if (!raw) return null;
-  const m = raw.match(/^(\d{1,2})-(\d{1,2})$/);
-  if (!m) return null;
-  const s = Number(m[1]);
-  const e = Number(m[2]);
-  if (!Number.isFinite(s) || !Number.isFinite(e)) return null;
-  if (s < WINDOW_MIN_HOUR || e > WINDOW_MAX_HOUR || s >= e) return null;
-  return [s, e];
-}
 
 // Parse a comma-separated reasons string, dropping any unknown values.
 function parseReasonsParam(raw: string | null): Set<ReasonsToVisit> | null {
@@ -82,10 +67,6 @@ function App() {
 
   const dayOptions = useMemo(() => computeDayOptions(), []);
   const [selectedDay, setSelectedDay] = useState(() => {
-    // URL wins, if it names a day that's actually available (stale links
-    // for yesterday's date or a far-future day fall through to default).
-    const fromUrl = new URLSearchParams(window.location.search).get(DAY_PARAM);
-    if (fromUrl && dayOptions.some((d) => d.isoDate === fromUrl)) return fromUrl;
     // After 8 PM local, most of today's daytime is gone — land on tomorrow.
     const defaultIdx = new Date().getHours() >= 20 && dayOptions.length > 1 ? 1 : 0;
     return dayOptions[defaultIdx].isoDate;
@@ -122,10 +103,6 @@ function App() {
     return new Set<ReasonsToVisit>();
   });
   const [windowHours, setWindowHours] = useState<[number, number]>(() => {
-    const fromUrl = parseWindowParam(
-      new URLSearchParams(window.location.search).get(WINDOW_PARAM),
-    );
-    if (fromUrl) return fromUrl;
     try {
       const raw = localStorage.getItem(WINDOW_KEY);
       if (raw) {
@@ -164,22 +141,23 @@ function App() {
     localStorage.setItem(HUB_KEY, selectedHubId);
   }, [selectedHubId]);
 
-  // Sync all shareable filter state to the URL in a single effect so the
+  // Sync shareable filter state to the URL in a single effect so the
   // address bar always reflects the current view. replaceState (not push)
-  // so the back button isn't polluted by every filter toggle. Omitting
-  // reasons when empty keeps shared links tidy when no filters are active.
+  // so the back button isn't polluted by every filter toggle. Day and
+  // window are intentionally excluded: day is meant to be relative (today
+  // / tomorrow / this Saturday), so a shared link with an absolute date
+  // would go stale on the next day, and window is a personal preference
+  // rather than share-worthy state.
   useEffect(() => {
     const url = new URL(window.location.href);
     url.searchParams.set(HUB_PARAM, selectedHubId);
-    url.searchParams.set(DAY_PARAM, selectedDay);
-    url.searchParams.set(WINDOW_PARAM, `${windowHours[0]}-${windowHours[1]}`);
     if (selectedReasons.size > 0) {
       url.searchParams.set(REASONS_PARAM, Array.from(selectedReasons).join(','));
     } else {
       url.searchParams.delete(REASONS_PARAM);
     }
     window.history.replaceState({}, '', url);
-  }, [selectedHubId, selectedDay, windowHours, selectedReasons]);
+  }, [selectedHubId, selectedReasons]);
 
   const toggleReason = (r: ReasonsToVisit) => {
     setSelectedReasons((prev) => {
