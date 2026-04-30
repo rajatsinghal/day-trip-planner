@@ -1,14 +1,21 @@
-# Mobile port: design and agentic dev plan
+# Mobile port: design and agentic dev plan (v2)
 
 Plan for shipping the day-trip-planner as native iOS and Android apps
-(plus iPad) using a hybrid architecture: an Expo/React Native shell
-with a MapLibre GL JS map embedded via `react-native-webview`.
+using a hybrid architecture: an Expo/React Native shell with a
+MapLibre GL JS map embedded via `react-native-webview`.
 
 The plan is structured so that each phase is an **agent-driven task**
-with explicit PASS/FAIL validation criteria. The agentic cycle is
-develop → validate → fix, looped until a phase passes. Human
+with explicit PASS/FAIL criteria expressed as commands. The agentic
+cycle is develop → validate → fix, looped until a phase passes. Human
 engagement is limited to phase-boundary sign-off and the one phase
 that genuinely requires a physical device (Phase 5).
+
+**v2 changes:** based on review feedback. Major revisions to §4
+(bridge protocol — handshake inversion, message queue, recovery
+messages), §6 Phase 1 (sprite-sheet pins, inlined HTML, process-death
+recovery), §6 Phase 2 (full state shape, race protection), new §6
+Phase 2.5 (shared primitives lock), §7 (PASS criteria become explicit
+commands; fix-log; diff cap), and new §12 (v1 scope decisions).
 
 ---
 
@@ -16,9 +23,9 @@ that genuinely requires a physical device (Phase 5).
 
 Both pure approaches have known, documented issues:
 
-- **Capacitor (full web-app-in-WebView):** architectural WebGL ceiling
-  in WKWebView; 110+ DOM-based markers panning in a WebView will feel
-  worse than native; App Store 4.2 (thin-wrapper) risk.
+- **Capacitor (full web-app-in-WebView):** architectural WebGL
+  ceiling in WKWebView; 110+ DOM-based markers panning in a WebView
+  will feel worse than native; App Store 4.2 (thin-wrapper) risk.
 - **Expo with `@maplibre/maplibre-react-native`:** known Android
   stability issues (tile-loading "Canceled" errors, GZIP bugs);
   smaller API surface than MapLibre GL JS; requires native build for
@@ -43,35 +50,44 @@ and native data/state ownership.
 │                                                                  │
 │  ┌──────────────────────┐  ┌──────────────────────────────┐    │
 │  │ Zustand store        │  │ UI (all native components)   │    │
-│  │  selectedHub         │  │   HubPicker                  │    │
+│  │  selectedHubId       │  │   HubPicker                  │    │
 │  │  selectedDay         │  │   WhenPicker                 │    │
 │  │  windowHours         │  │   ReasonFilter               │    │
 │  │  tempUnit            │  │   DestinationList (FlatList) │    │
 │  │  selectedReasons     │  │   BottomCardStrip            │    │
 │  │  weatherByDest       │  │   MobileDetailSheet          │    │
-│  │  (MMKV persistence)  │  │   SettingsMenu               │    │
+│  │  loading             │  │   SettingsMenu               │    │
+│  │  failedIds           │  │   RetryBanner                │    │
+│  │  retrying            │  │                              │    │
+│  │  detailId            │  │                              │    │
+│  │  (MMKV persistence)  │  │                              │    │
 │  └──────────┬───────────┘  └──────────────┬───────────────┘    │
 │             │                             │                     │
-│             │  enriched pins +            │                     │
-│             │  center + style             │                     │
 │             ▼                             ▼                     │
 │  ┌──────────────────────────────────────────────────────┐      │
-│  │ MapWebView.tsx (react-native-webview)                │      │
-│  │   bundles map/index.html + MapLibre GL JS            │      │
-│  │   postMessage bridge (typed protocol)                │      │
+│  │ MapWebView.tsx (react-native-webview + outbox)       │      │
+│  │   bundles map.html (MapLibre GL JS inlined)          │      │
+│  │   typed postMessage protocol with seq + queue        │      │
+│  │   process-death recovery (iOS + Android)             │      │
 │  │                                                       │      │
 │  │   ┌─────────────────────────────────────────────┐    │      │
-│  │   │ map/index.html (WebView)                    │    │      │
-│  │   │   MapLibre GL JS, OpenFreeMap tiles         │    │      │
-│  │   │   Pin rendering (GeoJSON symbol layer)      │    │      │
-│  │   │   flyTo, tap handlers                       │    │      │
+│  │   │ map.html (WebView)                          │    │      │
+│  │   │   MapLibre GL JS (inlined)                  │    │      │
+│  │   │   Sprite-sheet symbol layer for pins        │    │      │
+│  │   │   webglcontextlost handler                  │    │      │
 │  │   └─────────────────────────────────────────────┘    │      │
 │  └──────────────────────────────────────────────────────┘      │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────┐      │
-│  │ lib/ (pure TS, ported unchanged)                     │      │
+│  │ packages/core (workspace package, shared with web)   │      │
 │  │   weather.ts, geo.ts, days.ts, units.ts             │      │
-│  │   nws.ts (MMKV swap), reasons_to_visit.tsx (SVG)    │      │
+│  │   reasons_to_visit/ (data only)                     │      │
+│  │   hubs/ (data only)                                 │      │
+│  └──────────────────────────────────────────────────────┘      │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────┐      │
+│  │ mobile/src/lib (mobile-specific)                     │      │
+│  │   nws.ts (MMKV)  reasons_to_visit_icons (RN-SVG)    │      │
 │  └──────────────────────────────────────────────────────┘      │
 │                                                                  │
 └────────────────────────────────────────────────────────────────┘
@@ -80,6 +96,10 @@ and native data/state ownership.
   api.weather.gov                         tiles.openfreemap.org
   (fetched from native)                   (fetched from WebView)
 ```
+
+**v1 platform scope:** iPhone + Android phone. iPad ships as
+phone-compat in v1 (declared `requireFullScreen`); proper iPad layout
+is v2. See §12.
 
 ---
 
@@ -93,91 +113,173 @@ and native data/state ownership.
 | Destination list | Native | `FlatList` virtualization for 100+ items |
 | Bottom card strip | Native | Native paging / snap |
 | Detail sheet | Native | Native `Modal` + `Animated` |
+| Retry banner | Native | Standard RN component |
 | **Map rendering** | **WebView** | MapLibre GL JS only; avoids MapLibre RN Android bugs |
-| Pin tap / fly-to | WebView → Native via bridge | Map emits events; native owns logic |
+| Pin tap / fly-to / viewport | WebView ↔ Native via bridge | Map emits events; native owns logic |
 | Tile fetching | WebView | Standard MapLibre behavior; tiles cached in WebView |
-
-**Rule of thumb:** if it renders map pixels, it's WebView. Everything
-else is native.
 
 ---
 
-## 4. Bridge protocol
+## 4. Bridge protocol (v2)
 
 Typed `postMessage` contract. Defined once in
-`src/map/bridge-protocol.ts` and imported by both sides.
+`mobile/src/map/bridge-protocol.ts` and imported by both sides.
 
-### Native → Map
+### 4.1 Handshake — map-first
+
+Inversion of v1: the **map** announces readiness; the native side
+sends `INIT` only after `MAP_READY`. Avoids the race where
+`injectJavaScript('handleNativeMessage(...)')` fires before
+`window.handleNativeMessage` is registered in the WebView.
+
+```
+Mount: Native creates WebView with empty source URL replaced by inlined HTML.
+WebView: index.html runs, registers window.handleNativeMessage, posts MAP_READY.
+Native: on MAP_READY, posts INIT, flushes outbox.
+WebView: on INIT, initializes MapLibre, mounts sprite sheet, posts MAP_INITIALIZED.
+Native: on MAP_INITIALIZED, sends first SET_PINS.
+```
+
+Until `MAP_INITIALIZED`, all native-originated messages other than
+`INIT` are queued in the **outbox**. The outbox flushes on
+`MAP_INITIALIZED` and is cleared on any reload.
+
+### 4.2 Message queue and seq numbers
+
+Every native → map message carries a monotonic `seq: number`. Map
+tracks `lastAppliedSeq` per message type. Out-of-order or stale
+messages are dropped:
+
+- `SET_PINS` with `seq < lastAppliedSeq[SET_PINS]` → ignored.
+- `FLY_TO` with `seq < lastAppliedSeq[FLY_TO]` → ignored.
+
+This prevents a slow `SET_PINS` for hub A landing after a fresh
+`INIT` for hub B from corrupting the display. Native bumps `seq` on
+every outbound message; the outbox stamps `seq` at flush time, not
+enqueue time.
+
+### 4.3 Native → Map
 
 ```ts
 type NativeToMap =
-  | { type: 'INIT'; center: { lat: number; lon: number }; styleUrl: string }
-  | { type: 'SET_PINS'; pins: MapPin[] }
-  | { type: 'FLY_TO'; destId: string }
-  | { type: 'SET_SELECTED'; destId: string | null };
+  | { type: 'INIT'; seq: number;
+      center: { lat: number; lon: number; name: string };
+      styleUrl: string; isDarkMode: boolean }
+  | { type: 'SET_PINS'; seq: number; hubId: string; pins: MapPin[] }
+  | { type: 'FLY_TO'; seq: number; destId: string }
+  | { type: 'SET_SELECTED'; seq: number; destId: string | null }
+  | { type: 'SET_STYLE'; seq: number; styleUrl: string; isDarkMode: boolean }
+  | { type: 'HEARTBEAT'; seq: number; nonce: string };
 
 interface MapPin {
   id: string;
   lat: number;
   lon: number;
-  emoji: string;           // weather emoji
-  color: string;           // pin fill (from weather code)
+  iconImage: string;       // sprite key e.g. "pin-sunny"
   selected: boolean;
+  loading: boolean;        // true → uses neutral loading sprite
 }
 ```
 
-### Map → Native
+`HEARTBEAT` is used post-resume to detect a dead JS context (no
+response within 1500ms → treat as dead, full reload).
+
+### 4.4 Map → Native
 
 ```ts
 type MapToNative =
   | { type: 'MAP_READY' }
+  | { type: 'MAP_INITIALIZED'; styleLoaded: boolean }
   | { type: 'PIN_TAPPED'; destId: string }
-  | { type: 'MAP_ERROR'; message: string };
+  | { type: 'TILE_ERROR'; sourceId: string; status?: number; url: string }
+  | { type: 'MAP_ERROR'; code: 'webgl-context-lost' | 'style-load-failed' | 'unknown'; message: string }
+  | { type: 'HEARTBEAT_ACK'; nonce: string }
+  | { type: 'LOG'; level: 'info' | 'warn' | 'error'; message: string };
 ```
 
-### Transport
+`LOG` exists so the WebView can surface debug info to native console
+without `console.log` being silently dropped.
 
-- **Native → Map:** `webViewRef.current.injectJavaScript(...)`
-  with a serialized message; map registers a global
-  `window.handleNativeMessage`.
+### 4.5 Recovery — process death and WebGL context loss
+
+Three failure modes, three handlers:
+
+1. **WebGL context lost** (older iOS, GPU pressure): map.html
+   listens for `webglcontextlost`, posts `MAP_ERROR` with code
+   `webgl-context-lost`. Native calls `webViewRef.reload()` and
+   re-handshakes from scratch.
+2. **WebView content process terminated** (iOS 17/18 memory kill):
+   native uses
+   `react-native-webview`'s `onContentProcessDidTerminate` (iOS) and
+   `onRenderProcessGone` (Android) callbacks. Native calls
+   `.reload()` and re-handshakes.
+3. **AppState `active` post-resume**: native sends `HEARTBEAT`. If
+   no `HEARTBEAT_ACK` within 1500ms, treat as dead → `.reload()` +
+   re-handshake. If ACK arrives, just refresh pins (cheap path).
+
+After any reload, native resends in order: `INIT` → `SET_PINS`
+(current hub) → `SET_SELECTED` (current selection).
+
+### 4.6 Transport
+
+- **Native → Map:**
+  `webViewRef.current.injectJavaScript('window.handleNativeMessage(' + JSON.stringify(msg) + ');true;')`.
+  Trailing `true;` is required to avoid an iOS WKWebView bug
+  returning non-string. Outbox flushes one message per
+  `requestAnimationFrame` to avoid bursty drops.
 - **Map → Native:** `window.ReactNativeWebView.postMessage(JSON.stringify(msg))`;
-  native receives via `onMessage` prop.
+  native receives via `onMessage` prop with a 64KB payload cap
+  (multi-message pin sets must batch into one).
 
-### Contract invariants
+### 4.7 Invariants
 
-1. Native waits for `MAP_READY` before sending any non-INIT message.
-2. `SET_PINS` is idempotent; sending same payload is a no-op on the map side.
-3. All messages are JSON-serializable; no functions, Dates, or undefineds.
+1. Map ignores all messages until handler is registered (`MAP_READY` posted first).
+2. Native does not send map messages until `MAP_INITIALIZED` (queue them).
+3. `SET_PINS` always carries the full pin set, never deltas.
+4. `seq` is monotonic per direction; map drops stale messages by `seq`.
+5. All messages are JSON-serializable (no functions, Dates, undefined).
+6. WebView reload always restarts the handshake from `MAP_READY`.
 
 ---
 
 ## 5. Project structure
 
-New Expo project at `mobile/` inside this repo (keeps the web app
-untouched, shares the `lib/` and `hubs/` source via symlink or
-direct import path).
+Monorepo workspace approach (npm workspaces). Two consumers — the
+existing web app and the new mobile app — share a `core` package.
+Replaces v1's fragile `sync-shared.ts` script.
 
 ```
-day-trip-planner/
-├── src/                          # existing web app (unchanged)
-│   ├── hubs/
-│   ├── lib/
-│   └── components/
+day-trip-planner/                   # repo root, npm workspace root
+├── package.json                    # "workspaces": ["packages/*", "mobile", "."]
+├── packages/
+│   └── core/                       # NEW — shared logic
+│       ├── package.json            # name: "@dtp/core"
+│       ├── src/
+│       │   ├── weather.ts          # moved from src/lib/
+│       │   ├── geo.ts
+│       │   ├── days.ts
+│       │   ├── units.ts
+│       │   ├── reasons_to_visit.ts # data only — no JSX
+│       │   └── hubs/               # all hub data
+│       └── tsconfig.json
 │
-└── mobile/                       # NEW
-    ├── app.json                  # Expo config
-    ├── package.json
+├── src/                            # existing web app
+│   ├── lib/                        # nws.ts (web), reasons_to_visit.tsx (web SVG)
+│   └── components/                 # imports @dtp/core
+│
+└── mobile/                         # NEW — Expo app
+    ├── app.json
+    ├── package.json                # depends on @dtp/core
     ├── tsconfig.json
-    ├── App.tsx                   # root
+    ├── App.tsx
     ├── assets/
-    │   └── map/
-    │       ├── index.html        # bundled map HTML
-    │       └── maplibre.js       # vendored MapLibre GL JS
+    │   ├── map.html                # single self-contained file
+    │   ├── sprites/                # PNG sprites + JSON sidecar
+    │   └── splash/icon assets
     ├── src/
-    │   ├── screens/
-    │   │   └── MainScreen.tsx    # the whole app UI
+    │   ├── screens/MainScreen.tsx
     │   ├── components/
-    │   │   ├── MapWebView.tsx    # WebView + bridge
+    │   │   ├── MapWebView.tsx
     │   │   ├── DestinationList.tsx
     │   │   ├── BottomCardStrip.tsx
     │   │   ├── MobileDetailSheet.tsx
@@ -186,290 +288,404 @@ day-trip-planner/
     │   │   ├── HourRangeSlider.tsx
     │   │   ├── DayChips.tsx
     │   │   ├── ReasonFilter.tsx
-    │   │   └── SettingsMenu.tsx
+    │   │   ├── SettingsMenu.tsx
+    │   │   └── RetryBanner.tsx
     │   ├── store/
-    │   │   ├── index.ts          # Zustand store
-    │   │   └── persist.ts        # MMKV adapter
+    │   │   ├── index.ts            # Zustand store
+    │   │   ├── selectors.ts        # frozen selector API (Phase 2.5)
+    │   │   ├── persist.ts          # MMKV adapter
+    │   │   └── fetchWeather.ts     # NWS worker pool
+    │   ├── theme/                  # frozen tokens (Phase 2.5)
+    │   │   ├── colors.ts
+    │   │   ├── spacing.ts
+    │   │   └── typography.ts
     │   ├── map/
-    │   │   └── bridge-protocol.ts
-    │   ├── lib/                  # copy of ../../src/lib (see below)
-    │   │   ├── weather.ts
-    │   │   ├── geo.ts
-    │   │   ├── days.ts
-    │   │   ├── units.ts
-    │   │   ├── nws.ts            # MMKV swap
-    │   │   └── reasons_to_visit.tsx   # react-native-svg rewrite
-    │   └── hubs/                 # copy of ../../src/hubs
-    └── eas.json                  # EAS Build config
+    │   │   └── bridge-protocol.ts  # frozen types (Phase 2.5)
+    │   ├── icons/                  # react-native-svg icons (Phase 2.5)
+    │   │   ├── WaterfallIcon.tsx
+    │   │   ├── MuseumIcon.tsx
+    │   │   └── reason-icon.tsx
+    │   └── lib/
+    │       ├── nws.ts              # MMKV port
+    │       └── linking.ts          # deep link parser
+    ├── __tests__/                  # smoke tests per phase
+    └── eas.json
 ```
 
-**lib/ and hubs/ sharing:** copy rather than symlink (symlinks bite
-Metro bundler). A small script `mobile/scripts/sync-shared.ts`
-copies `../src/hubs/*.ts` and the portable `../src/lib/*.ts` files
-on build. Two files diverge (`nws.ts`, `reasons_to_visit.tsx`) and
-live only in `mobile/src/lib/`.
+**CI drift check:** A workspace package eliminates duplication —
+no drift possible. As insurance, a CI job on every PR runs
+`tsc --noEmit` across both `src/` and `mobile/` to catch any
+breaking change to `@dtp/core`.
 
 ---
 
 ## 6. Dev phases
 
-Each phase is a discrete agent task with its own PASS/FAIL criteria.
-Phases 0–2 are sequential (each depends on the previous). Phase 3 is
-parallel (multiple component agents run concurrently). Phase 4
-integrates. Phase 5 is the one human-touched phase (device testing).
+Each phase is a discrete agent task with explicit PASS/FAIL
+criteria expressed as commands. Phases 0 → 2 → 2.5 are sequential.
+Phase 3 is parallel across 5 components, gated on Phase 2.5.
+Phase 4 integrates. Phase 5 is the one human-touched phase.
 
-### Phase 0 — Scaffold
+### Phase 0 — Scaffold + monorepo + observability
 
-**Agent:** `general-purpose`, single agent, sonnet.
+**Agent:** `general-purpose`, sonnet, single agent.
 
 **Scope:**
-- Init Expo SDK 52+ project at `mobile/` with TypeScript strict mode.
-- Install deps: `react-native-webview`, `react-native-mmkv`,
-  `zustand`, `react-native-svg`, `react-native-gesture-handler`,
-  `react-native-reanimated`, `@expo/vector-icons`.
-- Configure `app.json` (name, slug, icon, splash, bundle IDs).
-- Configure EAS Build (`eas.json`) for dev client and preview builds.
-- Create `mobile/scripts/sync-shared.ts` and run it once.
-- Port `lib/nws.ts`: swap `localStorage` for MMKV (sync API).
-- Port `lib/reasons_to_visit.tsx`: inline `<svg>` → `react-native-svg` primitives.
-- Stub `App.tsx` that renders "Hello" and a typecheck target.
-- Run `npx expo prebuild` to generate iOS/Android projects.
+- Convert repo to npm workspaces. Create `packages/core/`. Move
+  pure-TS files from `src/lib/` and `src/hubs/` into
+  `packages/core/src/`. Update web `src/` imports to `@dtp/core`.
+  Web app must continue to typecheck and build.
+- Init Expo SDK 52+ TypeScript project at `mobile/` (strict mode).
+- Install: `react-native-webview`, `react-native-mmkv`, `zustand`,
+  `react-native-svg`, `react-native-gesture-handler`,
+  `react-native-reanimated`, `@expo/vector-icons`,
+  `@sentry/react-native`, `expo-linking`, `expo-application`.
+- Configure `app.json`: bundle IDs, splash, icon (placeholders OK),
+  `requireFullScreen: true` (defers iPad layout work — see §12),
+  Linking scheme `dtp://`.
+- Configure `eas.json` with three profiles: `development`
+  (dev-client), `preview` (internal TestFlight/internal track),
+  `production`. Documents but does not yet provision Apple/Android
+  credentials (see §12, deferred to launch).
+- Install Sentry; wire `init()` in `App.tsx` with a placeholder DSN
+  env var. Crash measurement in §11 depends on this.
+- Port `mobile/src/lib/nws.ts`: swap `localStorage` for MMKV (sync API).
+  Preserve all current behavior including `fetchedAt` field.
+- Port `mobile/src/icons/` from `src/lib/reasons_to_visit.tsx`:
+  `WaterfallIcon` and `MuseumIcon` rebuilt with `react-native-svg`.
+- Stub `App.tsx` rendering "Hello" + Sentry init.
+- Run `npx expo prebuild` to generate `ios/` and `android/`.
 
-**Validation (PASS criteria):**
-- [ ] `cd mobile && npx tsc --noEmit` exits 0.
-- [ ] `cd mobile && npx expo prebuild` exits 0 and produces `ios/` + `android/` dirs.
-- [ ] `cd mobile && npx expo export` succeeds.
-- [ ] `sync-shared.ts` copied the expected files (validator agent checks
-  file list against manifest).
-- [ ] MMKV port of `nws.ts`: no `localStorage` references remain; all
-  call sites still compile.
-- [ ] SVG port of `reasons_to_visit.tsx`: no `<svg>`/`<path>`/`<rect>`/
-  `<line>` etc. JSX remain; only `react-native-svg` components.
+**Validation (commands, every one must run + transcript in report):**
 
-**Sub-agent roles:**
-- **Developer agent:** implements the above.
-- **Validator agent:** greps for `localStorage`, `<svg`, `<path`, etc.,
-  runs `tsc`, runs `expo prebuild`, reports PASS/FAIL with file:line
-  citations.
-- **Fix agent:** if validator fails, receives the validator report
-  and addresses each cited issue.
+| Check | Command | Expected |
+|---|---|---|
+| Workspace links resolve | `npm ls @dtp/core --workspaces` | both web + mobile show `@dtp/core` |
+| Web app still typechecks | `cd /Users/rajatsinghal/Code/day-trip-planner && npx tsc --noEmit -p tsconfig.app.json` | exit 0 |
+| Web app still builds | `npm run build` | exit 0 |
+| Mobile typecheck | `cd mobile && npx tsc --noEmit` | exit 0 |
+| Mobile prebuild | `cd mobile && npx expo prebuild --clean` | exit 0; `ios/` and `android/` exist |
+| Mobile export | `cd mobile && npx expo export` | exit 0 |
+| No `localStorage` in mobile | `grep -rn "localStorage" mobile/src` | no matches |
+| No web SVG JSX in mobile icons | `grep -rEn "<(svg\|path\|rect\|line\|circle\|ellipse) " mobile/src/icons` | no matches |
+| Sentry initialized | `grep -n "Sentry.init" mobile/App.tsx` | exactly 1 match |
 
 ---
 
-### Phase 1 — Map WebView
+### Phase 1 — Map WebView (sprite sheet, inlined HTML, recovery)
 
-**Agent:** `general-purpose`, single agent, opus (highest-risk phase).
+**Agent:** `general-purpose`, opus, single agent.
 
 **Scope:**
-- Create `mobile/assets/map/index.html`:
-  - Loads locally-bundled MapLibre GL JS (vendored into `maplibre.js`).
-  - OpenFreeMap Positron style via raw URL (same as web).
-  - Renders pins as a **GeoJSON symbol layer** (not DOM markers —
-    this solves the 110+ pin perf concern).
-  - Pin styling: text-field = emoji, icon-image = colored circle
-    generated from a small set of pre-rendered PNGs (one per weather
-    color) bundled alongside.
-  - Handles `INIT`, `SET_PINS`, `FLY_TO`, `SET_SELECTED`.
-  - Emits `MAP_READY`, `PIN_TAPPED`, `MAP_ERROR`.
-- Create `mobile/src/map/bridge-protocol.ts` (types only).
+- Create `mobile/src/map/bridge-protocol.ts` with the v2 type unions
+  from §4.3, §4.4. Frozen as of this phase — see Phase 2.5.
+- Create `mobile/assets/map.html`:
+  - **Inline** MapLibre GL JS (vendored + inlined at build time
+    via small `mobile/scripts/build-map-html.ts`). No sibling JS
+    files — single self-contained HTML. Bundle target ≤ 1.2 MB.
+  - Inline a simple message-handler bootstrap that registers
+    `window.handleNativeMessage` synchronously and immediately
+    posts `MAP_READY`. INIT is buffered (queue) until handler is
+    fully ready — though handler-first registration plus map-first
+    handshake makes this a defense-in-depth measure.
+  - Renders pins as a **GeoJSON symbol layer** with `icon-image`
+    pointing to a sprite sheet. No `text-field` (emoji-as-text is
+    unreliable across platforms).
+  - **Sprite generation:** `mobile/scripts/build-sprites.ts`
+    pre-renders one PNG per (weather code × selected? × loading?)
+    composite — circle background colored per weather, emoji
+    centered, optional selection ring. Output: `assets/sprites.png`
+    + `assets/sprites.json` (1x and 2x). Loaded via MapLibre's
+    `addSprite`.
+  - Tap detection: `map.on('click', 'pins-layer', e => post PIN_TAPPED)`.
+  - Listens for `webglcontextlost` → posts `MAP_ERROR` with code
+    `webgl-context-lost`.
+  - Style URL passed via `INIT` (OpenFreeMap Positron, same as web);
+    light/dark switch via `SET_STYLE`.
+  - Home pin rendered separately as a `Marker` (single non-perf-critical
+    DOM element) — keeps the 🏠 + center.name tooltip from current web map.
 - Create `mobile/src/components/MapWebView.tsx`:
-  - `WebView` embedding `index.html` via `source={{ uri: Asset... }}`.
-  - `onMessage` parses and dispatches to props (`onReady`, `onPinTap`).
-  - Exposes imperative methods: `setPins()`, `flyTo()`, `setSelected()`.
-  - Handles `AppState` change (reloads pins on foreground).
+  - `WebView` with `source={{ html: inlinedHtml, baseUrl: 'https://localhost' }}`
+    (HTTPS baseUrl on Android prevents mixed-content blocking on
+    OpenFreeMap tiles).
+  - Props: `mixedContentMode="always"`, `originWhitelist={['*']}`,
+    `allowFileAccessFromFileURLs`, `allowUniversalAccessFromFileURLs`,
+    `javaScriptEnabled`, `domStorageEnabled`,
+    `onContentProcessDidTerminate` (iOS), `onRenderProcessGone`
+    (Android).
+  - Implements **outbox**: messages enqueued before
+    `MAP_INITIALIZED` are buffered; on `MAP_INITIALIZED` they flush
+    in order, one per `requestAnimationFrame`.
+  - Implements **seq numbers**: monotonic counter, stamped at
+    flush time.
+  - Implements **heartbeat**: on `AppState 'active'` after a prior
+    background, send `HEARTBEAT` with random nonce; if no
+    `HEARTBEAT_ACK` within 1500ms → `.reload()` and re-handshake.
+  - Imperative handle via `forwardRef`: `setPins`, `flyTo`,
+    `setSelected`, `setStyle`, `forceReload`.
+  - On any reload: re-INIT, re-SET_PINS (current hub), re-SET_SELECTED.
 
-**Validation (PASS criteria):**
-- [ ] Bridge protocol types import cleanly on both sides.
-- [ ] Grep: `index.html` message handlers match the union exhaustively.
-- [ ] Native-side `MapWebView` handles all `MapToNative` variants.
-- [ ] `MapWebView` is a ref-forwarded component with typed imperative handle.
-- [ ] No `new maplibregl.Marker()` (DOM marker) usage — only GeoJSON layer.
-- [ ] Typecheck passes.
-- [ ] A harness screen (temporary) renders 100 fake pins and logs
-  `MAP_READY` to the Metro console. (Developer agent produces this
-  harness; validator agent reads the expected console output from a
-  spec, then the human runs it once in Phase 5 to confirm. Or, if an
-  iOS simulator is available headlessly, a scripted smoke test can
-  launch the harness and scrape logs.)
+**Validation (commands):**
 
-**Sub-agent roles:**
-- **Developer agent (opus):** implements HTML + native wrapper + protocol.
-- **Protocol validator agent (sonnet):** reads both sides of the
-  bridge and confirms every variant is handled; reports any missing.
-- **Static analysis validator (sonnet):** grep for banned patterns
-  (`maplibregl.Marker`, `localStorage`, etc.), run typecheck.
-- **Fix agent:** addresses specific issues cited.
+| Check | Command | Expected |
+|---|---|---|
+| Typecheck | `cd mobile && npx tsc --noEmit` | exit 0 |
+| Bridge has all v2 types | `grep -cE "type: 'INIT'\|'SET_PINS'\|'FLY_TO'\|'SET_SELECTED'\|'SET_STYLE'\|'HEARTBEAT'" mobile/src/map/bridge-protocol.ts` | ≥ 6 |
+| Native handles all Map→Native | `grep -cE "case 'MAP_READY'\|'MAP_INITIALIZED'\|'PIN_TAPPED'\|'TILE_ERROR'\|'MAP_ERROR'\|'HEARTBEAT_ACK'\|'LOG'" mobile/src/components/MapWebView.tsx` | = 7 |
+| No DOM markers | `grep -rn "new maplibregl.Marker" mobile/assets/map.html` | only home pin (1 match) |
+| Sprite layer present | `grep -n "addLayer\|symbol" mobile/assets/map.html` | ≥ 1 each |
+| Process-death handlers wired | `grep -E "onContentProcessDidTerminate\|onRenderProcessGone" mobile/src/components/MapWebView.tsx` | both present |
+| WebGL loss handler in HTML | `grep "webglcontextlost" mobile/assets/map.html` | 1 match |
+| HTML inlined size | `wc -c mobile/assets/map.html` | < 1300000 bytes |
+| Smoke test | `cd mobile && npm test -- bridge-handshake.smoke.test` | exit 0 — asserts native sends `INIT` only after `MAP_READY`, queues other messages, drops stale-seq messages |
+
+The smoke test runs against a mocked WebView and verifies the
+outbox/seq logic without needing a real device.
 
 ---
 
-### Phase 2 — State layer
+### Phase 2 — State layer (full shape, race protection)
 
-**Agent:** `general-purpose`, single agent, sonnet.
+**Agent:** `general-purpose`, sonnet, single agent.
 
 **Scope:**
-- Create `mobile/src/store/index.ts` (Zustand):
-  - Slices: `selectedHubId`, `selectedDay`, `windowHours`, `tempUnit`,
-    `selectedReasons`, `weatherByDest`.
-  - Actions: `setHub`, `setDay`, `setWindow`, `setTempUnit`,
-    `toggleReason`, `setWeather`.
-  - Derived selectors (using `useShallow` or `reselect`):
-    `enrichedDestinations(selectedDay)` — mirrors the `App.tsx`
-    `useMemo` exactly.
-- Create `mobile/src/store/persist.ts`:
-  - MMKV-backed persistence middleware for Zustand.
-  - Persists: `selectedHubId`, `windowHours`, `tempUnit`, `selectedReasons`.
-  - Does NOT persist: `weatherByDest` (fetched fresh) or `selectedDay`
-    (computed).
-- Create `mobile/src/store/fetchWeather.ts`:
-  - Concurrency-limited worker pool (size 8), port of the App.tsx
-    effect.
-  - Streams results into the store per-destination.
-  - Cancels on hub switch via `AbortController`.
 
-**Validation (PASS criteria):**
-- [ ] Typecheck.
-- [ ] Store shape matches a schema (validator agent checks against a
-  spec in this doc).
-- [ ] Derived `enrichedDestinations` produces identical output to
-  the web `App.tsx` equivalent for a fixed fake input (snapshot test,
-  added in `mobile/__tests__/store.test.ts`; runs via `jest` or
-  `vitest` configured in Phase 0).
-- [ ] Persistence: mutating a persisted slice and re-creating the
-  store reads back the value (unit test).
-- [ ] `fetchWeather` cancels in-flight requests on hub switch (unit
-  test with a mocked fetch).
+Create `mobile/src/store/index.ts`. Slices match App.tsx exactly:
 
-**Sub-agent roles:**
-- **Developer agent:** implements store + persistence + fetch worker.
-- **Test agent:** writes the three unit tests listed above.
-- **Validator agent:** runs `npm test`, runs typecheck, diffs store
-  shape vs. spec.
-- **Fix agent:** addresses test failures.
+```ts
+interface DTPState {
+  // persisted
+  selectedHubId: string;
+  windowHours: [number, number];
+  tempUnit: 'F' | 'C';
+  selectedReasons: ReasonsToVisit[];
+
+  // ephemeral
+  selectedDay: DayOption;
+  weatherByDest: Record<string, NwsWeatherResponse>;
+  loading: boolean;            // true while initial fetch running
+  failedIds: Set<string>;      // destinations whose fetch failed
+  retrying: boolean;           // disables retry button while in flight
+  detailId: string | null;     // mobile detail sheet open state
+  selectedId: string | null;   // map flies to this; list highlights this
+
+  // current-fetch identity (race protection)
+  fetchEpoch: number;          // bumps on every hub switch
+}
+```
+
+Actions: `setHub` (bumps `fetchEpoch`, clears
+`weatherByDest`/`failedIds`, triggers fetch), `setDay`, `setWindow`,
+`setTempUnit`, `toggleReason`, `setWeatherForDest(id, result, epoch)`
+(rejects writes whose epoch != current — race protection),
+`setLoading`, `markFailed`, `retryFailed`, `setDetailId`,
+`setSelectedId`.
+
+**MMKV persistence:** custom Zustand storage adapter wrapping the
+sync MMKV API. Use `skipHydration: true` and gate first paint on a
+`useHydration()` hook to avoid flash-of-defaults. Persisted keys
+prefixed with `_v1_` to allow future schema migration.
+
+**Selectors** (in `selectors.ts` — frozen in Phase 2.5):
+- `selectEnrichedRows(state)` — adds drive time, weather, score,
+  sorts. Mirrors `App.tsx:286` `rows` memo.
+- `selectFilteredRows(state)` — applies reason filter on top.
+  Mirrors `App.tsx:308` `filteredRows` memo.
+- `selectDisplayWindow(state)` — derives
+  `[displayWindowStart, displayWindowEnd]` from `windowHours`,
+  `selectedDay`, current hour. Mirrors `App.tsx:277-284`.
+- `selectMapPins(state)` — derives `MapPin[]` for the WebView,
+  including loading state.
+- `selectAnyFailed(state)` — boolean for retry banner visibility.
+
+**`fetchWeather.ts`:** concurrency-pool worker (size 8). Every
+fetch tagged with `epoch` from store at issue time; results
+written via `setWeatherForDest(id, result, epoch)` which silently
+drops if `epoch !== fetchEpoch`. Cancels via `AbortController` on
+hub switch. Failed fetches add to `failedIds` instead of throwing.
+
+**`linking.ts`:** parses Expo Linking URLs `dtp://hub/<hubId>?reasons=<csv>`.
+Initial state hydration order: deep link > MMKV > default. Writing
+back: deep links are read-only on first launch; subsequent state
+changes update MMKV only. (No URL-bar writeback on mobile.)
+
+**Validation (commands):**
+
+| Check | Command | Expected |
+|---|---|---|
+| Typecheck | `cd mobile && npx tsc --noEmit` | exit 0 |
+| Store has all 11 slices | `grep -cE "selectedHubId\|windowHours\|tempUnit\|selectedReasons\|selectedDay\|weatherByDest\|loading\|failedIds\|retrying\|detailId\|selectedId\|fetchEpoch" mobile/src/store/index.ts` | ≥ 12 |
+| All five selectors exported | `grep -cE "export (function\|const) (selectEnrichedRows\|selectFilteredRows\|selectDisplayWindow\|selectMapPins\|selectAnyFailed)" mobile/src/store/selectors.ts` | = 5 |
+| Race protection in setWeatherForDest | `grep -A 5 "setWeatherForDest" mobile/src/store/index.ts \| grep "fetchEpoch"` | matches |
+| MMKV adapter + skipHydration | `grep -E "skipHydration\|MMKV" mobile/src/store/persist.ts` | both present |
+| Smoke test 1 | `cd mobile && npm test -- store-race.smoke.test` | exit 0 — fires fetch for hub A, switches to hub B, asserts hub-A results dropped |
+| Smoke test 2 | `cd mobile && npm test -- store-derived.smoke.test` | exit 0 — feeds fixture hub data + fixture weather, asserts `selectFilteredRows` matches a snapshot derived from the web `App.tsx` logic |
+| Smoke test 3 | `cd mobile && npm test -- linking.smoke.test` | exit 0 — parses `dtp://hub/seattle?reasons=hike,lake` correctly |
 
 ---
 
-### Phase 3 — Native UI components (PARALLEL)
+### Phase 2.5 — Shared primitives lock (NEW)
+
+**Agent:** `general-purpose`, sonnet, single agent.
+
+This phase exists because Phase 3 forks five agents in parallel,
+all of which depend on shared types. Without explicit lock-down,
+they will drift in incompatible directions.
+
+**Scope:**
+
+- **Theme tokens** (`mobile/src/theme/`):
+  - `colors.ts` — palette extracted from web Tailwind config (and
+    weather-color mappings used in current `Map.tsx` lines 18–20).
+    Frozen as a `const` map. No new colors may be introduced in
+    Phase 3.
+  - `spacing.ts` — 4px grid scale.
+  - `typography.ts` — sizes, weights, line heights.
+- **Reason icons** (`mobile/src/icons/reason-icon.tsx`):
+  - Single `<ReasonIcon reason={...} size={...} />` component.
+    Wraps `WaterfallIcon` / `MuseumIcon` / emoji fallbacks. Phase 3
+    components import this — they do not implement their own icon
+    rendering.
+- **Bridge types** — `mobile/src/map/bridge-protocol.ts` is frozen
+  as a contract. Phase 3 may not modify; if a component needs a new
+  message, it must escalate.
+- **Selector API** — `mobile/src/store/selectors.ts` is frozen as
+  a contract. Phase 3 imports selectors; new selectors require
+  Phase 2.5 update.
+- **Add a freeze marker** at the top of each frozen file:
+  ```
+  // FROZEN as of Phase 2.5 — modifications require a Phase 2.5 amendment.
+  ```
+
+**Validation:**
+
+| Check | Command | Expected |
+|---|---|---|
+| Theme files exist | `ls mobile/src/theme/{colors,spacing,typography}.ts` | all 3 |
+| ReasonIcon exported | `grep -n "export.*ReasonIcon" mobile/src/icons/reason-icon.tsx` | 1 match |
+| Freeze markers in place | `grep -l "FROZEN as of Phase 2.5" mobile/src/{theme,map,store,icons}/*.ts` | ≥ 6 files |
+| Typecheck | `cd mobile && npx tsc --noEmit` | exit 0 |
+
+---
+
+### Phase 3 — Native UI components (PARALLEL ×5)
 
 **Agents:** five concurrent developer agents, sonnet. Each owns one
-component subtree. All read the same store; dependencies are only on
-the store interface from Phase 2.
+component subtree. Hard rule: no agent may modify any frozen file
+from Phase 2.5.
 
-**Split:**
+| Agent | Component(s) | Reads from store | Reference (web) |
+|---|---|---|---|
+| 3a | `DayChips`, `HourRangeSlider`, `WhenPicker` | `selectedDay`, `windowHours`, `selectDisplayWindow` | `src/components/DayChips.tsx`, `HourRangeSlider.tsx`, `WhenPicker.tsx` |
+| 3b | `ReasonFilter`, `SettingsMenu` | `selectedReasons`, `tempUnit` | `src/components/ReasonFilter.tsx`, `SettingsMenu.tsx` |
+| 3c | `DestinationList` (FlatList) | `selectFilteredRows`, `selectedId`, `loading` | `src/components/SideList.tsx` (drop hover popover) |
+| 3d | `BottomCardStrip` | `selectFilteredRows`, `selectedId` | `src/components/BottomCardStrip.tsx` |
+| 3e | `MobileDetailSheet`, `HubPicker`, `RetryBanner` | `detailId`, `selectedHubId`, `selectAnyFailed` | `src/components/MobileDetailSheet.tsx` + new for HubPicker/RetryBanner |
 
-| Agent | Component(s) | References |
+**Common rules:**
+- Read original web component (cited reference) for behavior.
+- Do not port Tailwind classes verbatim. Use `theme/` tokens +
+  `StyleSheet`.
+- Drop desktop UX (hover, mousedown outside-click, keyboard shortcuts).
+- Use `Pressable` with `accessibilityRole`/`accessibilityLabel` —
+  required for App Store accessibility.
+- Cap font scaling at 1.3× via `allowFontScaling={true}` +
+  `maxFontSizeMultiplier={1.3}`.
+- Read store via narrow selectors only. Do not duplicate state.
+- Forbidden: modifying `theme/`, `store/selectors.ts`,
+  `map/bridge-protocol.ts`, `icons/`.
+
+**Validation per component (commands):**
+
+| Check | Command | Expected |
 |---|---|---|
-| 3a | `DayChips`, `HourRangeSlider`, `WhenPicker` | `src/components/DayChips.tsx`, `HourRangeSlider.tsx`, `WhenPicker.tsx` |
-| 3b | `ReasonFilter`, `SettingsMenu` | `src/components/ReasonFilter.tsx`, `SettingsMenu.tsx` |
-| 3c | `DestinationList` (FlatList) | `src/components/SideList.tsx` (drop hover popover) |
-| 3d | `BottomCardStrip` | `src/components/BottomCardStrip.tsx` |
-| 3e | `MobileDetailSheet` + `HubPicker` | `src/components/MobileDetailSheet.tsx`; new HubPicker replaces `<select>` |
+| Typecheck | `cd mobile && npx tsc --noEmit` | exit 0 |
+| No DOM APIs | `grep -rEn "document\.\|window\.\|getBoundingClientRect\|scrollIntoView\|MutationObserver\|addEventListener" mobile/src/components/<NAME>.tsx` | no matches |
+| Uses theme tokens | `grep -nE "from '[../]+theme'\|from '@/theme'" mobile/src/components/<NAME>.tsx` | ≥ 1 |
+| Has accessibilityLabel on every Pressable | `grep -c "accessibilityLabel=" mobile/src/components/<NAME>.tsx` ≥ count of `<Pressable` | true |
+| Frozen files unchanged | `git diff --stat mobile/src/{theme,icons,map/bridge-protocol.ts,store/selectors.ts}` | empty |
+| Smoke test | `cd mobile && npm test -- <NAME>.smoke.test` | exit 0 — renders with fixture state, asserts visible text/labels |
 
-**Common rules for all 3x agents:**
-- Read the original web component to understand behavior.
-- Do NOT port Tailwind classes verbatim; translate to `StyleSheet`
-  (or NativeWind v4 if adopted in Phase 0 — decided at scaffold time).
-- Replace all DOM APIs per the mapping in this doc's §8.
-- Drop desktop-only UX (hover popover, keyboard shortcuts).
-- Read from and write to the Zustand store; do not duplicate state.
-- `<svg>` icons use `react-native-svg`.
-
-**Validation (PASS criteria, per component):**
-- [ ] Typecheck.
-- [ ] No DOM APIs: grep for `document.`, `window.`, `addEventListener`,
-  `getBoundingClientRect`, `scrollIntoView`, `MutationObserver`.
-- [ ] No Tailwind classes: grep for `className=` (StyleSheet only)
-  OR if using NativeWind, `className=` is the only styling and no
-  raw `style={}` leaks.
-- [ ] Reads only the store slices it needs (validator agent checks
-  `useStore` selectors are narrow).
-- [ ] Visual parity spec: validator agent compares structure against
-  original web component (not pixel-for-pixel — element hierarchy and
-  semantic labels must match).
-
-**Sub-agent roles per component:**
-- **Developer agent (sonnet):** ports the component.
-- **Validator agent (sonnet):** runs the checks above, reports issues.
-- **Fix agent (sonnet):** addresses issues.
+A merge-conflict validator runs after all 5 agents complete:
+`git merge-tree HEAD <branch3a> <branch3b>` for each pair. Any
+non-trivial overlap → FAIL → escalate.
 
 ---
 
 ### Phase 4 — Integration
 
-**Agent:** `general-purpose`, single agent, sonnet.
+**Agent:** `general-purpose`, sonnet, single agent.
 
 **Scope:**
-- Wire `MainScreen.tsx`: layout the native components + map WebView
-  in one mobile-first screen (no desktop layout).
-- App shell: `SafeAreaView`, status bar handling, keyboard avoidance.
-- `AppState` handler: on `active` resume, re-send pin payload to map
-  WebView (covers the WebView-blank-on-resume issue).
-- Hub switch flow: cancel in-flight NWS fetches, clear
-  `weatherByDest`, send new `INIT` to map, refetch.
-- Day switch flow: update store, re-compute derived `enrichedDestinations`,
-  re-send `SET_PINS` with new colors/emojis.
-- Pin tap flow: `MAP_TAPPED` → store sets selected → `MobileDetailSheet` opens.
-- List tap flow: set selected → `FLY_TO` to map → detail sheet opens.
-- Splash screen, app icon (placeholder OK; real assets from user later).
+- `MainScreen.tsx`: layout the map (top half) + bottom strip + sheet
+  + retry banner + header (HubPicker, WhenPicker, ReasonFilter,
+  SettingsMenu). Single-column phone layout.
+- App shell: `SafeAreaView`, status bar, keyboard avoidance,
+  gesture handler root.
+- Hub switch flow: bump `fetchEpoch`, clear weather, send `INIT`
+  to map, kick off fetch worker.
+- Day switch: re-derive `displayWindow`, re-compute
+  `selectMapPins`, send fresh `SET_PINS`.
+- Pin tap: store sets `selectedId` and `detailId`; map flies; sheet
+  opens.
+- List/card tap: same.
+- Sheet swipe-down or backdrop tap: clears `detailId`.
+- AppState handler: on `active` after background, send `HEARTBEAT`;
+  no ACK in 1.5s → `forceReload` + re-handshake.
+- Deep link entry: `linking.ts` parses URL → store hydration.
+- RetryBanner: shows when `selectAnyFailed`. Tap → `retryFailed`.
 
-**Validation (PASS criteria):**
-- [ ] Typecheck.
-- [ ] `expo export` succeeds.
-- [ ] Integration contract: validator agent walks through each user
-  flow (hub switch, day switch, pin tap, list tap, background/resume,
-  filter toggle) and confirms the code paths exist end-to-end.
-- [ ] No dead imports; no unused exports.
-- [ ] Bundle size under 20 MB (sanity check).
+**Validation:**
 
-**Sub-agent roles:**
-- **Developer agent:** integrates.
-- **Flow validator agent (opus):** reads the integrated code and
-  traces each user flow, reporting any broken chain.
-- **Fix agent:** patches broken chains.
+| Check | Command | Expected |
+|---|---|---|
+| Typecheck | `cd mobile && npx tsc --noEmit` | exit 0 |
+| Export | `cd mobile && npx expo export` | exit 0 |
+| Bundle size | `du -sh mobile/dist` | < 20 MB |
+| Frozen files unchanged | `git diff --stat ...frozen paths...` | empty |
+| Cross-phase regression | `npm test --workspaces` | all phase smoke tests still pass |
+| Flow walk smoke | `cd mobile && npm test -- integration.smoke.test` | exit 0 — asserts each user flow has a code path with named symbols (hub-switch → setHub → fetch start → bridge SET_PINS) |
 
 ---
 
 ### Phase 5 — Device validation (human-touched)
 
-This is the one phase that genuinely requires human involvement,
-because it's impossible to faithfully validate UX without a real
-device.
+The one phase that genuinely requires human involvement.
 
 **Scope:**
-- User runs `cd mobile && npx expo run:ios` (or EAS Build → TestFlight).
-- User follows a **test checklist** produced by the validator agent.
-- Each item on the checklist has a PASS/FAIL outcome.
-- FAIL items are reported back (just the item number + description);
-  a fix agent investigates and patches, then the user re-runs that item.
+- User runs `cd mobile && npx expo run:ios` (or EAS Build →
+  TestFlight) and `npx expo run:android`.
+- User follows test checklist generated by validator agent at
+  `mobile/TEST_CHECKLIST.md`.
+- FAIL items reported by number; fix agent triages and patches.
 
-**Checklist categories (generated by agent):**
-1. Cold launch: app starts, map renders, pins appear within 10s.
-2. Pan/zoom: 60fps on iPhone 12+, acceptable on older.
-3. Pin tap → detail sheet opens.
-4. List tap → map flies to pin + detail sheet opens.
-5. Hub switch: all pins update; no stale markers.
-6. Day switch: pin colors/emojis update.
-7. Filter toggle: list filters; map pins filter.
-8. Background/foreground: map not blank.
-9. Offline launch: cached hubs visible, map shows cached tiles where
-   available.
-10. Memory: switching hubs 5 times in a row doesn't crash.
+**Checklist categories** (objective outcomes only):
 
-**Sub-agent roles:**
-- **Checklist generator (sonnet):** reads this doc + integrated code
-  and produces the actual test checklist as `mobile/TEST_CHECKLIST.md`.
-- **Fix agent (sonnet):** triages reported failures, patches,
-  re-validates via typecheck + flow walk, asks user to re-test.
+1. Cold launch: app launches in <3s on iPhone 12 / Pixel 6; map
+   shows pins within 10s.
+2. Pan/zoom: subjective — note any stutter; capture FPS via
+   instrumentation already in map.html (logged via `LOG` message).
+3. Pin tap → detail sheet opens; list/card tap → map flies + sheet
+   opens.
+4. Hub switch: pin count on map matches `selectFilteredRows.length`
+   for the new hub within 30s of switch.
+5. Day switch: pin sprites update visibly within 2s.
+6. Filter toggle: list count and map pin count agree.
+7. Background → foreground: heartbeat round trip within 1.5s; if
+   not, observe map fully reloads and pins reappear.
+8. Force-quit → relaunch: persisted state restored (last hub,
+   filters, units).
+9. Airplane mode → cold launch: app loads with cached hubs; retry
+   banner appears; turning network back on + retry succeeds.
+10. Memory: 10 hub switches in a row, no crash; Sentry shows zero
+    crashes.
 
-**User touchpoints in Phase 5:**
-- One command to build (`expo run:ios` or EAS Build link).
-- Report FAIL item numbers.
-- Confirm fixes by re-running.
+User touchpoints in Phase 5: build command, report FAIL item
+numbers, confirm fixes by re-running specific items.
 
 ---
 
 ## 7. Agentic cycle
-
-Every phase follows this loop:
 
 ```
            ┌─────────────────┐
@@ -481,7 +697,8 @@ Every phase follows this loop:
                                 ┌─────────────────┐
                                 │  VALIDATOR      │
                                 │  AGENT          │
-                                │  runs checks    │
+                                │  runs commands, │
+                                │  pastes output  │
                                 └────────┬────────┘
                                          │
                                PASS ◄────┴────► FAIL
@@ -489,36 +706,60 @@ Every phase follows this loop:
                                 │                  ▼
                                 │         ┌─────────────────┐
                                 │         │  FIX AGENT      │
-                                │         │  reads report,  │
-                                │         │  patches code   │
+                                │         │  reads report + │
+                                │         │  FIX_LOG.md;    │
+                                │         │  diff ≤ 200 LoC │
                                 │         └────────┬────────┘
                                 │                  │
                                 │                  └──► back to VALIDATOR
+                                │
                                 ▼
-                         advance to next phase
+                        ┌─────────────────┐
+                        │  REVIEWER AGENT │  (final pass per phase)
+                        │  reads diff,    │
+                        │  finds runtime- │
+                        │  break risks    │
+                        └────────┬────────┘
+                                 │
+                       PASS ◄────┴────► FAIL → back to FIX
+                         │
+                         ▼
+                  advance to next phase
 ```
 
-### Cycle contracts
+**Cycle contracts:**
 
-- **Developer → Validator handoff:** developer writes a one-paragraph
-  summary of what it changed, pointing at file:line for each change.
-- **Validator report format:** a structured list of `{ pass: bool, check: string, detail: string, file?: string, line?: number }`.
-- **Fix agent input:** the full validator report + the file diffs
-  from the developer agent. Fix agent addresses only cited issues —
-  does not refactor beyond scope.
-- **Loop cap:** 3 passes. If validator still reports FAIL after 3
-  fix cycles, escalate to human.
+- **Validator output format:** structured list of
+  `{ pass: bool, check: string, command: string, output: string }`.
+  Reports without `output` field are rejected; the validator must
+  paste actual command transcripts. "Looks good" is not acceptable.
+- **Fix agent constraints:** diff ≤ 200 lines per pass; touches
+  only files cited by validator. May read prior `FIX_LOG.md`
+  entries to avoid repeating failed fixes.
+- **Fix log:** each phase has `mobile/_phase<N>/FIX_LOG.md`. Fix
+  agent appends after each pass: pass number, summary, files
+  changed, validator result. Three failed passes → escalate.
+- **Reviewer agent:** runs once per phase after validator PASS.
+  Opus model. Job is to find runtime-break risks the validator
+  can't catch (race conditions, missing keyExtractor, useEffect
+  deps, etc.). May trigger one fix pass before final PASS.
+- **Cross-phase regression:** every phase's validator re-runs the
+  prior phases' command-based checks (typecheck and smoke tests).
+  If any prior phase regresses, current phase FAILS.
+- **Escalation payload:** at 3-pass cap, fix agent produces:
+  failing check IDs, what was tried each pass, hypothesis, specific
+  human input requested.
 
-### Parallelism rules
+**Parallelism rules:**
 
-- Phases 0, 1, 2, 4, 5 are sequential (each depends on prior).
-- Phase 3 is parallel across 5 component groups.
-- Within a phase, developer → validator → fix is sequential; no
-  skipping validator.
+- Phases 0 → 1 → 2 → 2.5 → 3 → 4 → 5 sequential.
+- Phase 3 is parallel ×5 across components, gated on Phase 2.5
+  freeze. Post-merge conflict validator must PASS before Phase 4.
+- Within a phase, dev → validator → fix is sequential; no skipping.
 
 ---
 
-## 8. Web-to-native API mapping (shared reference)
+## 8. Web-to-native API mapping
 
 Used by all Phase 3 component agents.
 
@@ -527,24 +768,24 @@ Used by all Phase 3 component agents.
 | `<div>` | `<View>` |
 | `<button>` | `<Pressable>` (with `pressed` state styles) |
 | `<a href>` | `<Pressable onPress={() => Linking.openURL(...)}>` |
-| `<ul>` / `<li>` | `<FlatList>` (>10 items) or `<ScrollView>` + `<View>` |
+| `<ul>` / `<li>` | `<FlatList>` (>10 items) or `<ScrollView>` |
 | `<img src>` | `<Image source={require(...)}>` |
-| `<svg>` + children | `<Svg>` from `react-native-svg` + primitives |
+| `<svg>` + children | `<Svg>` from `react-native-svg` |
 | `<select>` | Custom `Picker` sheet or `@react-native-picker/picker` |
-| `<input type="range">` | Custom Gesture Handler slider or `@miblanchard/react-native-slider` |
-| Tailwind classes | `StyleSheet` (or NativeWind v4) |
+| `<input type="range">` | `@miblanchard/react-native-slider` (multi-thumb) |
+| Tailwind classes | `theme/` tokens + `StyleSheet` |
 | `onClick` | `onPress` |
-| `onMouseEnter` / `onMouseLeave` | **dropped** (no hover on touch) |
+| `onMouseEnter` / `onMouseLeave` | **dropped** |
 | `hover:` styles | **dropped** |
-| `document.addEventListener('keydown')` | **dropped** (or Hardware keyboard for iPad only) |
-| `document.addEventListener('mousedown')` (outside-click) | Transparent `Pressable` backdrop or `<Modal>` |
+| `document.addEventListener('keydown')` | **dropped** |
+| `document.addEventListener('mousedown')` (outside-click) | `<Modal>` or transparent `Pressable` backdrop |
 | `el.scrollIntoView(...)` | `flatListRef.current.scrollToIndex(...)` |
 | `el.getBoundingClientRect()` | `Dimensions.get('window')` + `onLayout` |
-| `localStorage` | `MMKV` (sync) — set up in Phase 0 |
+| `localStorage` | MMKV (sync) — set up Phase 0 |
 | CSS `transition` / `animation` | `Animated` or `Reanimated` |
 | `position: fixed` | `<Modal>` or absolute inside `SafeAreaView` |
-| `window.location.search` / `URLSearchParams` | Expo Linking + deep links |
-| `window.setTimeout` / `setTimeout` | `setTimeout` (same) |
+| `window.location.search` | Expo Linking + `linking.ts` parser |
+| `setTimeout` | `setTimeout` (same) |
 
 ---
 
@@ -552,41 +793,38 @@ Used by all Phase 3 component agents.
 
 | Risk | Likelihood | Mitigation |
 |---|---|---|
-| WebView blank after backgrounding | High | `AppState` handler re-sends `SET_PINS` on foreground; handled in Phase 4 |
-| Tile loading over HTTPS with cert pinning | Low | Use standard HTTPS; `react-native-webview` handles by default |
-| MapLibre GL JS bundle size inflates app | Medium | Vendor only used modules; gzip in asset pipeline; target <2MB JS |
-| NWS API rate limits on fast hub switching | Medium | Concurrency cap 8 + `AbortController` on switch (already in plan) |
-| MMKV migration from fresh install | Low | No migration needed (new install); persisted keys versioned with a `_v1` suffix |
-| iOS App Store 4.2 rejection | Low | App is native; only map is WebView; uses native share, native picker |
-| Android WebView variance across devices | Medium | Target Chrome 90+; test on 2–3 device profiles in Phase 5 |
-| Expo prebuild drift on SDK updates | Low | Pin SDK version in `app.json`; update quarterly |
-| `react-native-webview` iOS 18 memory kills | Medium | Already planned for; same handler covers this |
+| WebView blank after backgrounding | High | Heartbeat + reload on no-ACK; `onContentProcessDidTerminate` and `onRenderProcessGone` handlers (§4.5) |
+| WebGL context loss on older iOS | Medium | `webglcontextlost` handler in map.html → `MAP_ERROR` → reload (§4.5) |
+| Stale `SET_PINS` corrupting display | Medium | `seq` numbers + `fetchEpoch` (§4.2 + §6 Phase 2 race protection) |
+| Tile loading over HTTPS from `file://` page on Android | Medium | `mixedContentMode="always"` + HTTPS `baseUrl` (§6 Phase 1) |
+| Local sibling JS load fails on iOS | High if not addressed | Single inlined HTML, no sibling files (§6 Phase 1) |
+| MapLibre bundle inflates app size | Medium | Inline at build, gzip target ≤ 1.2 MB |
+| NWS rate limits on rapid hub switching | Medium | Concurrency cap 8 + epoch invalidation |
+| iOS App Store 4.2 rejection | Low | Native UI; only map is WebView; native pickers and share |
+| Android WebView variance | Medium | Target Chrome 90+; test 2 devices in Phase 5 |
+| Expo SDK 52 + WebView injectJavaScript timing | Medium | Map-first handshake + outbox queue (§4.1) |
+| MMKV native build friction | Low | Standard Expo dev-client flow; well-documented |
 
 **Escape hatches:**
-- If WebView map perf is unacceptable on target devices:
-  swap to `@maplibre/maplibre-react-native` (already assessed;
-  known Android issues; would be a Phase 1 re-do only — no change to
-  Phases 2–5 because the bridge protocol + store are wrapper-agnostic).
-- If MMKV causes native build friction: fall back to
-  `@react-native-async-storage/async-storage` (async, requires
-  reworking lazy initializers — tolerable).
+- WebView map perf unacceptable on target devices: swap to
+  `@maplibre/maplibre-react-native`. Bridge types and store are
+  wrapper-agnostic; only `MapWebView.tsx` rewrites. Phase 1 only.
+- MMKV crashes in EAS Build: fallback to AsyncStorage + sync
+  hydration boundary (App.tsx loading screen).
 
 ---
 
 ## 10. Minimum human engagement
 
-You (the maintainer) only need to engage at these moments:
+You only need to engage at:
 
-1. **Kick off each phase.** A short "proceed with Phase N" — agents
-   handle the rest within the phase.
-2. **Sign off on a phase.** Read the validator's final PASS report
-   and say "next."
-3. **Phase 5 testing.** Run the build, walk the checklist, report
-   failures by number.
-4. **Escalations.** If the agentic loop hits its 3-pass cap without
-   passing, resolve the blocker.
+1. Kick off each phase ("proceed with Phase N").
+2. Sign off ("next") after reading validator final PASS.
+3. Phase 5: run device builds, walk checklist, report failure
+   item numbers.
+4. Escalations: 3-pass loop without PASS.
 
-Everything else — implementation, validation, fixing — is agent-owned.
+Everything else is agent-owned.
 
 ---
 
@@ -594,75 +832,255 @@ Everything else — implementation, validation, fixing — is agent-owned.
 
 Ship to TestFlight (iOS) and Play Console internal testing (Android) when:
 
-- All of Phases 0–4 PASS their validators.
-- Phase 5 checklist: items 1–8 PASS on one iPhone, one iPad, one Android.
+- All of Phases 0–4 PASS their validators and reviewer agents.
+- Phase 5 checklist items 1–10 PASS on:
+  - one iPhone (≥ iPhone 12, iOS ≥ 17)
+  - one Android phone (Pixel 5+ or equivalent, Android ≥ 12)
 - Bundle size < 40 MB installed.
-- Cold launch < 3s on iPhone 12 / Pixel 5.
-- Crash-free rate > 99% in the first 24h of TestFlight use.
+- Cold launch < 3s on the above devices.
+- Sentry crash-free session rate > 99% in the first 24h of internal
+  TestFlight use (measurement requires Phase 0 Sentry install).
+
+---
+
+## 12. v1 scope decisions
+
+These are explicit decisions, not aspirations. Agents do not
+re-litigate.
+
+| Concern | v1 decision | Rationale |
+|---|---|---|
+| iPad | Phone-compat only (`requireFullScreen: true`); not a separate iPad layout | Real iPad layout is a v2 effort (split-view, multi-window, pointer); shipping with phone-stretched UI is acceptable for v1 |
+| Push notifications | Out of scope | App is on-demand; no use case |
+| Location permission ("near me") | Out of scope v1 | Hub picker is the entry point; geolocation is a v2 feature |
+| Tile pre-cache for offline | Out of scope | First-launch UX requires network; cached tiles work for return visits |
+| Offline cold-launch UX | Banner: "No network — last known forecasts." Cached weather + cached hubs render | NWS data is forecast-only; a 6-hour-old forecast is still useful |
+| Deep linking | `dtp://hub/<id>?reasons=<csv>`. Read-only on launch | Mirrors web `?hub=` and `?reasons=` URL params |
+| Dark mode | Honored by `SET_STYLE` to map; native UI follows system theme | Cheap; both MapLibre styles already exist |
+| Accessibility | Required: `accessibilityLabel`/`accessibilityRole` on all Pressables; font scaling capped at 1.3×; map pin tap area ≥ 44pt | App Store guideline 1.5; floor not ceiling |
+| RTL | Not required v1 (English-only content) | hub data is English; full RTL is v2 if internationalized |
+| Crash reporting | Sentry installed Phase 0; DSN env var; symbol upload via EAS hook | Required for §11 launch criterion |
+| EAS credentials | Documented in eas.json; provisioning deferred to launch (one-time human task) | Apple Developer + Play Console accounts are user-supplied |
 
 ---
 
 ## Appendix A — Agent task templates
 
-These are the exact prompts to feed each agent. They're kept
-self-contained so an agent can pick one up with no other context.
+Each prompt is self-contained — embeds the contracts the agent
+needs without requiring the agent to read the whole plan.
 
-### Phase 0 scaffold agent prompt
+### Phase 0 scaffold agent
 
 ```
-Set up a new Expo SDK 52+ TypeScript project at /Users/rajatsinghal/Code/day-trip-planner/mobile.
+Set up an npm workspaces monorepo at /Users/rajatsinghal/Code/day-trip-planner.
 Follow MOBILE_PLAN.md §6 Phase 0 exactly.
-Deliverables:
- - mobile/ directory with working Expo project
- - All listed deps installed
- - nws.ts ported to MMKV (no localStorage)
- - reasons_to_visit.tsx ported to react-native-svg
- - Hello-world App.tsx that typechecks
- - sync-shared.ts script populating mobile/src/lib/ and mobile/src/hubs/
-Run the validator checks listed in §6 Phase 0 yourself before reporting done.
-Report PASS/FAIL for each checkbox with file:line citations.
+
+Steps:
+ 1. Create packages/core/ as a workspace package.
+ 2. Move src/lib/{weather,geo,days,units}.ts and src/hubs/* into
+    packages/core/src/. Update web src/ imports to @dtp/core.
+ 3. Init Expo SDK 52+ at mobile/. Strict TypeScript.
+ 4. Install: react-native-webview, react-native-mmkv, zustand,
+    react-native-svg, react-native-gesture-handler,
+    react-native-reanimated, @expo/vector-icons,
+    @sentry/react-native, expo-linking, expo-application.
+ 5. app.json: bundle IDs, splash, icon (placeholders fine),
+    requireFullScreen: true, scheme: "dtp".
+ 6. eas.json: development, preview, production profiles.
+ 7. Sentry init in App.tsx (placeholder DSN env var).
+ 8. Port nws.ts → MMKV. Port reasons_to_visit SVG icons → react-native-svg.
+ 9. expo prebuild.
+
+Run validator commands listed in §6 Phase 0 yourself before
+reporting done. Paste full command output for each in your report.
+Do not say "looks good" — paste transcripts.
 ```
 
-### Phase 1 map WebView agent prompt
+### Phase 1 map WebView agent
 
 ```
-Implement the map WebView for the Expo app per MOBILE_PLAN.md §6 Phase 1.
-Read §4 (bridge protocol) and §2 (architecture) before starting.
-Key constraints:
- - Pins MUST be rendered as a GeoJSON symbol layer, not maplibregl.Marker DOM elements.
- - Bundle MapLibre GL JS locally under mobile/assets/map/.
- - Use typed bridge protocol from mobile/src/map/bridge-protocol.ts.
- - Exhaustively handle every message variant on both sides.
- - MapWebView.tsx must expose imperative handle via forwardRef.
-Run validator checks listed in §6 Phase 1 before reporting done.
+Implement the map WebView per MOBILE_PLAN.md §6 Phase 1 and §4.
+
+Required reading: §4 (full bridge protocol) and §6 Phase 1.
+
+Frozen contracts you must conform to:
+ - Bridge types: types from §4.3 and §4.4 are the contract.
+   Define them in mobile/src/map/bridge-protocol.ts. Do not invent
+   new message types.
+ - Handshake order: map posts MAP_READY first; native sends INIT
+   after; map posts MAP_INITIALIZED; native flushes outbox.
+ - All native→map messages carry monotonic seq. Map drops
+   messages with stale seq for that type.
+
+Implementation rules:
+ - Single self-contained mobile/assets/map.html. MapLibre GL JS
+   inlined at build time via mobile/scripts/build-map-html.ts.
+   No sibling JS files.
+ - Pins as GeoJSON symbol layer with icon-image pointing to a
+   sprite sheet built by mobile/scripts/build-sprites.ts. NO
+   text-field with emoji. NO maplibregl.Marker for pins.
+ - Home pin (🏠 + center.name) IS allowed to use maplibregl.Marker
+   (single non-perf-critical element).
+ - WebView source: { html: inlinedHtml, baseUrl: 'https://localhost' }.
+ - WebView props: mixedContentMode="always", originWhitelist=['*'],
+   allowFileAccessFromFileURLs, allowUniversalAccessFromFileURLs.
+ - Recovery: webglcontextlost in HTML, onContentProcessDidTerminate
+   (iOS), onRenderProcessGone (Android), heartbeat with 1500ms
+   timeout. On any failure: webViewRef.reload(), then re-handshake,
+   then re-INIT, then re-SET_PINS, then re-SET_SELECTED.
+
+Style URL: https://tiles.openfreemap.org/styles/positron (light)
+or .../dark-matter (dark) — same as the web app uses.
+
+Weather code → sprite mapping: read packages/core/src/weather.ts
+function `weatherCodeToColor` (or equivalent) and src/lib/weather.ts
+constants `LOADING_BG` `WEATHER_COLORS`. Mirror exactly.
+
+Run validator commands from §6 Phase 1 before reporting done. Paste
+full transcripts.
 ```
 
-### Phase 3 component agent prompt (per component)
+### Phase 2 state agent
 
 ```
-Port the web component at src/components/<NAME>.tsx to React Native at
-mobile/src/components/<NewName>.tsx. Follow MOBILE_PLAN.md §6 Phase 3 and §8.
-Do NOT port Tailwind classes verbatim; use StyleSheet.
-Drop desktop-only UX (hover, keyboard shortcuts, outside-click via mousedown).
-Read from the Zustand store (mobile/src/store); narrow selectors only.
-Run the Phase 3 validator checks for this component before reporting done.
+Implement the Zustand store per MOBILE_PLAN.md §6 Phase 2.
+
+State shape MUST exactly match §6 Phase 2's interface DTPState
+(11 slices including loading, failedIds, retrying, detailId,
+selectedId, fetchEpoch). Reference web App.tsx:75-95 for behavior.
+
+Race protection: setWeatherForDest takes (id, result, epoch).
+If epoch !== state.fetchEpoch, drop. setHub bumps fetchEpoch.
+
+Selectors (in selectors.ts): selectEnrichedRows,
+selectFilteredRows, selectDisplayWindow, selectMapPins,
+selectAnyFailed. Mirror web App.tsx memo logic exactly:
+ - selectEnrichedRows ↔ App.tsx `rows` memo (line ~286)
+ - selectFilteredRows ↔ App.tsx `filteredRows` memo (line ~308)
+ - selectDisplayWindow ↔ App.tsx lines 277-284 clamp logic.
+
+MMKV via custom Zustand storage adapter. skipHydration: true,
+gate first paint via useHydration().
+
+linking.ts parses dtp://hub/<id>?reasons=<csv>. Hydration order:
+deep link > MMKV > default.
+
+Smoke tests required:
+ 1. store-race.smoke.test — fires fetch for hub A, switches to B,
+    asserts hub-A results dropped via fetchEpoch.
+ 2. store-derived.smoke.test — feeds fixture, asserts
+    selectFilteredRows matches web logic.
+ 3. linking.smoke.test — dtp://hub/seattle?reasons=hike,lake parses.
+
+Run validator commands from §6 Phase 2 before reporting done. Paste
+full transcripts.
 ```
 
-### Validator agent prompt (general)
+### Phase 2.5 primitives lock agent
 
 ```
-Validate MOBILE_PLAN.md §6 Phase <N> for the most recent developer-agent output.
-For each checkbox in that phase's PASS criteria, run the check and report
-  { pass: bool, check: string, detail: string, file?: string, line?: number }.
+Lock down shared primitives per MOBILE_PLAN.md §6 Phase 2.5.
+Frozen files: mobile/src/theme/{colors,spacing,typography}.ts,
+mobile/src/icons/reason-icon.tsx, mobile/src/map/bridge-protocol.ts,
+mobile/src/store/selectors.ts.
+
+Each frozen file gets a top comment:
+  // FROZEN as of Phase 2.5 — modifications require a Phase 2.5 amendment.
+
+Theme palette: extract from tailwind.config.js + Map.tsx weather
+color map (lines 18-20 of src/components/Map.tsx).
+
+Validator commands from §6 Phase 2.5. Paste transcripts.
+```
+
+### Phase 3 component agent (template, parameterized per agent)
+
+```
+Port the web component(s) at <CITED PATHS> to React Native at
+mobile/src/components/<NEW NAMES>. Follow MOBILE_PLAN.md §6 Phase 3
+and §8.
+
+You may NOT modify any of these frozen files:
+ - mobile/src/theme/*
+ - mobile/src/icons/reason-icon.tsx
+ - mobile/src/map/bridge-protocol.ts
+ - mobile/src/store/selectors.ts
+
+Store interface (read these slices/selectors only):
+<EMBED SLICE/SELECTOR LIST FOR THIS AGENT>
+
+Theme tokens you can use:
+<EMBED TOKEN LIST>
+
+Rules:
+ - StyleSheet only. No inline styles unless dynamic.
+ - Pressable + accessibilityLabel + accessibilityRole on every tap target.
+ - maxFontSizeMultiplier={1.3} on all Text.
+ - Drop hover, mousedown outside-click, keyboard shortcuts.
+ - Smoke test required per component: renders with fixture state,
+   asserts visible text/labels.
+
+Validator commands from §6 Phase 3 before reporting. Paste
+transcripts. Confirm git diff --stat shows no changes to frozen
+files.
+```
+
+### Validator agent (general)
+
+```
+Validate MOBILE_PLAN.md §6 Phase <N> for the most recent dev-agent
+output. For EACH check in that phase's command table:
+ 1. Run the exact command listed.
+ 2. Paste the full command output.
+ 3. Mark pass/fail based on the "Expected" column.
+
+Output format per check:
+  { pass: bool, check: "<name>", command: "<exact cmd>",
+    output: "<full transcript>", expected: "<from table>" }
+
 Return the full list — do not short-circuit on first fail.
+Reports without command output are invalid; you must run commands.
 Do not fix anything. Your job is to report.
 ```
 
-### Fix agent prompt (general)
+### Fix agent (general)
 
 ```
-Read the validator report at <path> and the file diffs from the prior developer agent.
-For each FAIL item: patch the cited file/line to satisfy the check.
-Do not refactor beyond the cited issue. Do not touch files not cited.
-When done, re-run the validator checks yourself locally and report your own results.
+Read the validator report at <path> and the dev-agent's diffs.
+Read mobile/_phase<N>/FIX_LOG.md (may be empty on pass 1).
+
+For each FAIL check:
+ 1. Identify root cause from the cited file/line.
+ 2. Make the smallest patch that satisfies the check.
+ 3. Total diff this pass MUST be ≤ 200 lines (`git diff --stat`).
+ 4. Touch ONLY files cited in the validator report.
+
+After patching:
+ 1. Re-run the validator commands yourself, paste transcripts.
+ 2. Append to FIX_LOG.md: pass number, summary, files changed,
+    re-validation result.
+
+If you cannot make all checks pass within 200 lines, escalate:
+emit a final FIX_LOG entry with failing check IDs, attempts so far,
+and specific human input you need.
+```
+
+### Reviewer agent (per phase)
+
+```
+You are a final reviewer. Validator already PASSed. Your job is to
+find runtime-break risks the validator can't catch.
+
+Read the diff for Phase <N> and look specifically for:
+ - useEffect missing deps that cause stale closures
+ - FlatList without keyExtractor or with non-unique keys
+ - forwardRef typed but imperative methods never invoked
+ - AppState listeners with empty store reads
+ - Bridge messages thrown on malformed JSON
+ - Race conditions between setHub and in-flight fetches
+ - MMKV reads on first render before hydration
+ - postMessage payloads exceeding 64KB
+
+If you find any: produce a fix-spec list (file:line, problem,
+suggested fix) and route back to fix agent. Otherwise PASS.
 ```
