@@ -176,7 +176,7 @@ interface MapPin {
   lat: number;
   lon: number;
   iconImage: string;       // sprite key e.g. "pin-sunny"
-  selected: boolean;
+  selected: boolean;       // collapses web's selected || hovered — there is no hover on touch
   loading: boolean;        // true → uses neutral loading sprite
 }
 ```
@@ -212,10 +212,15 @@ Three failure modes, three handlers:
    native uses
    `react-native-webview`'s `onContentProcessDidTerminate` (iOS) and
    `onRenderProcessGone` (Android) callbacks. Native calls
-   `.reload()` and re-handshakes.
-3. **AppState `active` post-resume**: native sends `HEARTBEAT`. If
-   no `HEARTBEAT_ACK` within 1500ms, treat as dead → `.reload()` +
-   re-handshake. If ACK arrives, just refresh pins (cheap path).
+   `.reload()` and re-handshakes. Note: on Android,
+   `onRenderProcessGone` only fires on hard render-process crashes,
+   not on the more common SurfaceView-destroyed-while-backgrounded
+   case — the heartbeat below is the primary Android post-resume
+   recovery path.
+3. **AppState `active` post-resume** (primary Android resume path):
+   native sends `HEARTBEAT`. If no `HEARTBEAT_ACK` within 1500ms,
+   treat as dead → `.reload()` + re-handshake. If ACK arrives, just
+   refresh pins (cheap path).
 
 After any reload, native resends in order: `INIT` → `SET_PINS`
 (current hub) → `SET_SELECTED` (current selection).
@@ -225,8 +230,12 @@ After any reload, native resends in order: `INIT` → `SET_PINS`
 - **Native → Map:**
   `webViewRef.current.injectJavaScript('window.handleNativeMessage(' + JSON.stringify(msg) + ');true;')`.
   Trailing `true;` is required to avoid an iOS WKWebView bug
-  returning non-string. Outbox flushes one message per
-  `requestAnimationFrame` to avoid bursty drops.
+  returning non-string. The outbox flush loop runs on the native JS
+  thread (not the WebView renderer), so it must use
+  `setTimeout(flushNext, 0)` between messages — `requestAnimationFrame`
+  does not exist on the native JS thread and would silently break the
+  flush loop. The `seq` counter is owned by the flush loop, stamped
+  at flush time, not at enqueue time.
 - **Map → Native:** `window.ReactNativeWebView.postMessage(JSON.stringify(msg))`;
   native receives via `onMessage` prop with a 64KB payload cap
   (multi-message pin sets must batch into one).
@@ -438,6 +447,7 @@ Phase 4 integrates. Phase 5 is the one human-touched phase.
 | WebGL loss handler in HTML | `grep "webglcontextlost" mobile/assets/map.html` | 1 match |
 | HTML inlined size | `wc -c mobile/assets/map.html` | < 1300000 bytes |
 | Smoke test | `cd mobile && npm test -- bridge-handshake.smoke.test` | exit 0 — asserts native sends `INIT` only after `MAP_READY`, queues other messages, drops stale-seq messages |
+| Smoke test content check | `grep -E "MAP_READY.*INIT\|stale.*seq\|outbox" mobile/__tests__/bridge-handshake.smoke.test.ts` | ≥ 3 matches |
 
 The smoke test runs against a mocked WebView and verifies the
 outbox/seq logic without needing a real device.
@@ -519,8 +529,11 @@ changes update MMKV only. (No URL-bar writeback on mobile.)
 | Race protection in setWeatherForDest | `grep -A 5 "setWeatherForDest" mobile/src/store/index.ts \| grep "fetchEpoch"` | matches |
 | MMKV adapter + skipHydration | `grep -E "skipHydration\|MMKV" mobile/src/store/persist.ts` | both present |
 | Smoke test 1 | `cd mobile && npm test -- store-race.smoke.test` | exit 0 — fires fetch for hub A, switches to hub B, asserts hub-A results dropped |
+| Smoke 1 content | `grep -E "fetchEpoch.*expect\|setHub\|hubId" mobile/__tests__/store-race.smoke.test.ts` | ≥ 3 matches |
 | Smoke test 2 | `cd mobile && npm test -- store-derived.smoke.test` | exit 0 — feeds fixture hub data + fixture weather, asserts `selectFilteredRows` matches a snapshot derived from the web `App.tsx` logic |
+| Smoke 2 content | `grep -E "selectFilteredRows.*expect\|selectEnrichedRows\|selectDisplayWindow" mobile/__tests__/store-derived.smoke.test.ts` | ≥ 2 matches |
 | Smoke test 3 | `cd mobile && npm test -- linking.smoke.test` | exit 0 — parses `dtp://hub/seattle?reasons=hike,lake` correctly |
+| Smoke 3 content | `grep -E "dtp://hub.*reasons.*expect" mobile/__tests__/linking.smoke.test.ts` | ≥ 1 match |
 
 ---
 
@@ -564,6 +577,7 @@ they will drift in incompatible directions.
 | Theme files exist | `ls mobile/src/theme/{colors,spacing,typography}.ts` | all 3 |
 | ReasonIcon exported | `grep -n "export.*ReasonIcon" mobile/src/icons/reason-icon.tsx` | 1 match |
 | Freeze markers in place | `grep -l "FROZEN as of Phase 2.5" mobile/src/{theme,map,store,icons}/*.ts` | ≥ 6 files |
+| Pre-commit guard installed | `test -x mobile/scripts/check-frozen.sh && git config core.hooksPath \| grep -E "."` | exit 0; hook runs on commit |
 | Typecheck | `cd mobile && npx tsc --noEmit` | exit 0 |
 
 ---
@@ -652,12 +666,25 @@ non-trivial overlap → FAIL → escalate.
 
 The one phase that genuinely requires human involvement.
 
+**Entry gate (must PASS before user touches a device):**
+
+| Check | Command | Expected |
+|---|---|---|
+| Cross-phase regression | `cd mobile && npx tsc --noEmit && npm test` | exit 0; all phase smoke tests still pass |
+| Frozen files unchanged since Phase 2.5 | `bash mobile/scripts/check-frozen.sh` | exit 0 |
+| App exports cleanly | `cd mobile && npx expo export` | exit 0 |
+
 **Scope:**
 - User runs `cd mobile && npx expo run:ios` (or EAS Build →
   TestFlight) and `npx expo run:android`.
 - User follows test checklist generated by validator agent at
   `mobile/TEST_CHECKLIST.md`.
 - FAIL items reported by number; fix agent triages and patches.
+
+**Rollback rule:** every Phase 5 fix re-runs the entry-gate
+commands above. If a fix re-breaks any prior-phase smoke test, the
+fix is reverted and the failure is escalated rather than papered
+over with another fix.
 
 **Checklist categories** (objective outcomes only):
 
@@ -733,16 +760,32 @@ numbers, confirm fixes by re-running specific items.
   `{ pass: bool, check: string, command: string, output: string }`.
   Reports without `output` field are rejected; the validator must
   paste actual command transcripts. "Looks good" is not acceptable.
+- **Smoke-test content checks:** every phase that requires a
+  smoke test ALSO requires a content check on the test file
+  (e.g. `grep -E "fetchEpoch.*expect" mobile/__tests__/store-race.smoke.test.ts`)
+  to defend against `expect(true).toBe(true)` rubber-stamps. The
+  per-phase command tables list the required grep terms.
 - **Fix agent constraints:** diff ≤ 200 lines per pass; touches
   only files cited by validator. May read prior `FIX_LOG.md`
   entries to avoid repeating failed fixes.
 - **Fix log:** each phase has `mobile/_phase<N>/FIX_LOG.md`. Fix
   agent appends after each pass: pass number, summary, files
-  changed, validator result. Three failed passes → escalate.
+  changed, validator result.
+- **3-pass cap is global per phase.** It is shared between the
+  developer→validator→fix loop and the reviewer→fix loop. Any
+  combination of fix passes above 3 escalates. Reviewer-triggered
+  fixes are not bonus passes.
 - **Reviewer agent:** runs once per phase after validator PASS.
   Opus model. Job is to find runtime-break risks the validator
   can't catch (race conditions, missing keyExtractor, useEffect
-  deps, etc.). May trigger one fix pass before final PASS.
+  deps, etc.). May trigger one fix pass before final PASS, charged
+  against the global 3-pass budget.
+- **Frozen-file global guard:** a pre-commit hook
+  (`mobile/scripts/check-frozen.sh`) fails any commit touching files
+  that contain the `// FROZEN as of Phase 2.5` marker unless the
+  commit message contains the exact token `Phase 2.5 amendment`.
+  Installed in Phase 2.5. Catches accidental modification by any
+  later-phase fix agent.
 - **Cross-phase regression:** every phase's validator re-runs the
   prior phases' command-based checks (typecheck and smoke tests).
   If any prior phase regresses, current phase FAILS.
