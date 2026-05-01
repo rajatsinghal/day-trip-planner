@@ -49,11 +49,15 @@ Phase 0  ──→  Phase 1  ──→  Phase 2  ──→  Phase 2.5  ──┐
         │   merge-conflict validator gates fan-in       │
         └───────────────────────────────────────────────┘
                                                         │
-                                                        ▼
-                                                   Phase 4
-                                                        │
-                                                        ▼
-                                                   Phase 5 (human)
+                                ┌───────────────────────┴───────────────────────┐
+                                │                                               │
+                                ▼                                               ▼
+                          Phase 4 (iPhone)                              Phase 4b (iPad)
+                                │                                               │
+                                └───────────────────┬───────────────────────────┘
+                                                    │
+                                                    ▼
+                                              Phase 5 (human)
 ```
 
 Sequential gates (no skipping, no overlap):
@@ -61,8 +65,8 @@ Sequential gates (no skipping, no overlap):
 - Phase 1 must PASS before Phase 2 (bridge contract is needed for store's MapPin selector).
 - Phase 2 must PASS before Phase 2.5 (selectors must exist before being frozen).
 - Phase 2.5 must PASS before any Phase 3 agent dispatches (frozen primitives).
-- All five Phase 3 agents must PASS individually + merge-conflict validator must PASS before Phase 4.
-- Phase 4 must PASS before Phase 5 entry gate runs.
+- All five Phase 3 agents must PASS individually + merge-conflict validator must PASS before Phase 4 / 4b.
+- Phase 4 (iPhone) and Phase 4b (iPad) run in parallel; both must PASS before Phase 5 entry gate runs.
 
 ---
 
@@ -142,18 +146,26 @@ For each phase, this table tells me exactly what to run.
 - No agent reads another agent's branch — they only read frozen contracts.
 - Merge happens once, after all 5 PASS, into a single `phase3-merged` branch.
 
-### Phase 4 — Integration
+### Phase 4 + 4b — Integration (iPhone parallel iPad)
 
 | Step | Action |
 |---|---|
-| 4.1 | Merge `phase3-merged` into main. Confirm typecheck. |
-| 4.2 | Dispatch **Developer** with Appendix A Phase 4 prompt. |
-| 4.3 | Validator runs full integration smoke + cross-phase regression (re-runs all prior smoke tests). |
-| 4.4 | Fix loop ≤ 3. |
-| 4.5 | **Reviewer (opus)** — focus: `AppState` listener correctness, deep-link hydration order, hub-switch flow under fast taps. |
-| 4.6 | Sign-off → user. |
+| 4.0 | Merge `phase3-merged` into main. Confirm typecheck. Branch `phase4-phone` and `phase4b-ipad` off main. |
+| 4.1 | Dispatch **2 Developer agents in parallel, single message**: Phase 4 (iPhone) prompt and Phase 4b (iPad) prompt. They commit to separate branches. |
+| 4.2 | Each agent runs to completion independently. Wait for both. |
+| 4.3 | Dispatch **2 Validators in parallel**, one per phase. |
+| 4.4 | Independent fix loops per phase, ≤ 3 each. |
+| 4.5 | When both PASS, merge `phase4-phone` then `phase4b-ipad` into main. The two phases touch only one shared file (`mobile/App.tsx` — the layout switch); resolve any conflict in App.tsx by keeping the runtime switch logic from Phase 4b. |
+| 4.6 | Run combined validator: typecheck, expo export, cross-phase regression. |
+| 4.7 | **Reviewer (opus)** — focus: `AppState` listener correctness, deep-link hydration order, hub-switch flow under fast taps, iPad layout reflow on rotation, Slide Over fallback. |
+| 4.8 | Sign-off → user. |
 
-**Estimated dispatches:** 2–4.
+**Estimated dispatches:** 5–8 (2 dev + 2 validator + 0–4 fix + 1 reviewer + 1 combined validator).
+
+**Coordination invariants for parallel 4 / 4b:**
+- Phase 4 owns `MainScreenPhone.tsx`. Phase 4b owns `MainScreenIPad.tsx` and `IPadDetailPanel.tsx`.
+- Both modify `mobile/App.tsx`, but only Phase 4b adds the layout-switch logic; Phase 4 should leave a stub that imports `MainScreenPhone` directly. Merge resolves to Phase 4b's switch.
+- Neither phase modifies frozen files or Phase 3 components.
 
 ### Phase 5 — Device validation
 
@@ -323,7 +335,9 @@ These decisions are closed for v1. Agents do not re-litigate.
 - Map: MapLibre GL JS in WebView (not MapLibre RN).
 - State: Zustand + MMKV (not Redux, not AsyncStorage).
 - Shared code: npm workspace `@dtp/core` (not sync-shared script).
-- iPad: phone-compat, not a separate layout (v2 work).
+- iPad: tablet-optimized two-pane layout (Phase 4b runs parallel to Phase 4).
+- iPad multi-window scenes, hardware-keyboard shortcuts: out of scope v1.
+- Android tablet: phone-compat in v1.
 - Push, geolocation, tile pre-cache: out of scope v1.
 - Crash reporting: Sentry, installed Phase 0.
 - Deep linking: `dtp://hub/<id>?reasons=<csv>`.
@@ -342,7 +356,7 @@ quietly mutated.
 Before dispatching Phase 0, this checklist must be true:
 
 - [ ] User has read `MOBILE_PLAN.md` and `DEV_PLAN.md` and signed off.
-- [ ] User has confirmed v1 scope (`MOBILE_PLAN.md` §12) — particularly the iPad-as-phone-compat decision and the deferral of push / geolocation / tile pre-cache.
+- [ ] User has confirmed v1 scope (`MOBILE_PLAN.md` §12) — particularly the deferral of push / geolocation / tile pre-cache, iPad multi-window, and Android tablet.
 - [ ] User understands their touchpoints (this doc §7).
 - [ ] Repo is in clean state on `main` (no uncommitted work).
 

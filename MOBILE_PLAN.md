@@ -97,9 +97,8 @@ and native data/state ownership.
   (fetched from native)                   (fetched from WebView)
 ```
 
-**v1 platform scope:** iPhone + Android phone. iPad ships as
-phone-compat in v1 (declared `requireFullScreen`); proper iPad layout
-is v2. See §12.
+**v1 platform scope:** iPhone, iPad (with tablet-optimized layout),
+Android phone. Android tablet ships as phone-compat in v1. See §12.
 
 ---
 
@@ -626,14 +625,14 @@ non-trivial overlap → FAIL → escalate.
 
 ---
 
-### Phase 4 — Integration
+### Phase 4 — Integration (iPhone + Android phone)
 
 **Agent:** `general-purpose`, sonnet, single agent.
 
 **Scope:**
-- `MainScreen.tsx`: layout the map (top half) + bottom strip + sheet
-  + retry banner + header (HubPicker, WhenPicker, ReasonFilter,
-  SettingsMenu). Single-column phone layout.
+- `MainScreenPhone.tsx`: layout the map (top half) + bottom strip
+  + sheet + retry banner + header (HubPicker, WhenPicker,
+  ReasonFilter, SettingsMenu). Single-column phone layout.
 - App shell: `SafeAreaView`, status bar, keyboard avoidance,
   gesture handler root.
 - Hub switch flow: bump `fetchEpoch`, clear weather, send `INIT`
@@ -648,6 +647,10 @@ non-trivial overlap → FAIL → escalate.
   no ACK in 1.5s → `forceReload` + re-handshake.
 - Deep link entry: `linking.ts` parses URL → store hydration.
 - RetryBanner: shows when `selectAnyFailed`. Tap → `retryFailed`.
+- Root `App.tsx` chooses screen at runtime via
+  `Platform.isPad || (Platform.OS === 'ios' && minDim >= 768)` →
+  renders `MainScreenIPad` (Phase 4b output) on iPad, else
+  `MainScreenPhone`.
 
 **Validation:**
 
@@ -659,6 +662,74 @@ non-trivial overlap → FAIL → escalate.
 | Frozen files unchanged | `git diff --stat ...frozen paths...` | empty |
 | Cross-phase regression | `npm test --workspaces` | all phase smoke tests still pass |
 | Flow walk smoke | `cd mobile && npm test -- integration.smoke.test` | exit 0 — asserts each user flow has a code path with named symbols (hub-switch → setHub → fetch start → bridge SET_PINS) |
+
+---
+
+### Phase 4b — Integration (iPad-optimized layout)
+
+**Agent:** `general-purpose`, sonnet, single agent. Runs in
+parallel with Phase 4.
+
+iPad gets a real tablet layout, not a stretched-iPhone phone-compat
+build. The component primitives from Phase 3 are reused; only the
+shell layout and detail-presentation pattern differ.
+
+**Scope:**
+- `MainScreenIPad.tsx`: two-pane layout.
+  - Header: full-width strip with `HubPicker`, `WhenPicker`,
+    `ReasonFilter` (more chips visible than phone), `SettingsMenu`.
+  - Left pane (~360pt fixed width on landscape, ~320pt on portrait):
+    `DestinationList` (FlatList) — always visible, no bottom strip.
+  - Right pane: `MapWebView` — fills remaining space.
+  - No `BottomCardStrip` (the list is always visible, so the strip
+    is redundant).
+- **Detail presentation:** `IPadDetailPanel.tsx` — slides in from
+  right edge over the map (~360pt wide), not a bottom modal. Same
+  store driver (`detailId`), same content as `MobileDetailSheet`,
+  different shell. Backdrop tap or swipe-right closes.
+- **Orientation handling:** layout responds to `useWindowDimensions`.
+  Portrait keeps two-pane (narrower list); rotation transitions
+  smoothly without remounting state.
+- **Slide Over / Split View:** standard iPad multitasking — handled
+  via the same `useWindowDimensions` listener. When width drops
+  below 600pt (e.g. user puts the app in narrow Slide Over), fall
+  back to `MainScreenPhone`. Above 600pt, two-pane layout.
+- **Pointer support:** native to React Native — `Pressable`
+  receives pointer-hover state on iPad with Magic Keyboard /
+  trackpad. Use it to surface a subtle hover preview on rows
+  (highlight + drop shadow) without blocking touch UX. No popovers
+  on hover (would conflict with tap behavior).
+- **Hardware keyboard:** out of scope v1 (no shortcuts wired). The
+  existing keyboard avoidance still works.
+- **Multi-window scenes (UISceneSession):** out of scope v1.
+  Requires AppDelegate changes; ships in v2 if user demand exists.
+
+**What this phase MUST NOT do:**
+- Modify any frozen file (theme, icons, bridge, selectors).
+- Modify `MainScreenPhone.tsx` (Phase 4 output).
+- Modify any Phase 3 component (those are reused as-is).
+- Touch the store schema (must work with the same DTPState).
+
+**Validation:**
+
+| Check | Command | Expected |
+|---|---|---|
+| Typecheck | `cd mobile && npx tsc --noEmit` | exit 0 |
+| Frozen files unchanged | `bash mobile/scripts/check-frozen.sh` | exit 0 |
+| Phase 3 components unchanged | `git diff --stat mobile/src/components/{DayChips,WhenPicker,HourRangeSlider,ReasonFilter,SettingsMenu,DestinationList,BottomCardStrip,MobileDetailSheet,HubPicker,RetryBanner}.tsx` | empty |
+| MainScreenPhone unchanged | `git diff --stat mobile/src/screens/MainScreenPhone.tsx` | empty |
+| iPad screen exists | `test -f mobile/src/screens/MainScreenIPad.tsx && test -f mobile/src/components/IPadDetailPanel.tsx` | both exist |
+| Layout switch wired | `grep -E "Platform.isPad\|isTablet\|MainScreenIPad" mobile/App.tsx` | ≥ 1 match |
+| Two-pane structure | `grep -cE "flexDirection.*row\|width:.*36[0-9]" mobile/src/screens/MainScreenIPad.tsx` | ≥ 2 |
+| Slide Over fallback | `grep -E "useWindowDimensions\|width.*<.*600" mobile/src/screens/MainScreenIPad.tsx` | both present |
+| Smoke test | `cd mobile && npm test -- ipad-layout.smoke.test` | exit 0 — feeds 1024×768 dimensions, asserts two-pane render; feeds 480×768, asserts phone fallback render |
+| Smoke content check | `grep -E "MainScreenIPad.*expect\|two-pane\|phone fallback" mobile/__tests__/ipad-layout.smoke.test.ts` | ≥ 2 matches |
+
+**Reviewer focus (Phase 4b):**
+- `useWindowDimensions` re-render correctness (no stale layouts on rotation).
+- IPadDetailPanel doesn't block map gestures when open (z-index, pointer-events).
+- Phone fallback below 600pt actually renders without crashes.
+- Pointer hover state doesn't accidentally fire on touch-only iPads.
 
 ---
 
@@ -688,12 +759,12 @@ over with another fix.
 
 **Checklist categories** (objective outcomes only):
 
-1. Cold launch: app launches in <3s on iPhone 12 / Pixel 6; map
-   shows pins within 10s.
+1. Cold launch: app launches in <3s on iPhone 12 / Pixel 6 / iPad
+   Air; map shows pins within 10s.
 2. Pan/zoom: subjective — note any stutter; capture FPS via
    instrumentation already in map.html (logged via `LOG` message).
-3. Pin tap → detail sheet opens; list/card tap → map flies + sheet
-   opens.
+3. Pin tap → detail opens (sheet on phone, side panel on iPad);
+   list/card tap → map flies + detail opens.
 4. Hub switch: pin count on map matches `selectFilteredRows.length`
    for the new hub within 30s of switch.
 5. Day switch: pin sprites update visibly within 2s.
@@ -706,6 +777,15 @@ over with another fix.
    banner appears; turning network back on + retry succeeds.
 10. Memory: 10 hub switches in a row, no crash; Sentry shows zero
     crashes.
+11. **iPad layout:** two-pane on iPad Air landscape and portrait.
+    Detail opens as right-side panel (not bottom sheet). Rotate
+    device — layout reflows without state loss.
+12. **iPad Slide Over:** drag the app into Slide Over (narrow
+    width). Layout falls back to phone single-column. Drag back to
+    full width — two-pane returns.
+13. **iPad pointer (if Magic Keyboard available):** hovering a row
+    with the cursor highlights it; tapping behaves identically to
+    finger.
 
 User touchpoints in Phase 5: build command, report FAIL item
 numbers, confirm fixes by re-running specific items.
@@ -795,9 +875,13 @@ numbers, confirm fixes by re-running specific items.
 
 **Parallelism rules:**
 
-- Phases 0 → 1 → 2 → 2.5 → 3 → 4 → 5 sequential.
+- Phases 0 → 1 → 2 → 2.5 → 3 → (4 ∥ 4b) → 5 sequential except where noted.
 - Phase 3 is parallel ×5 across components, gated on Phase 2.5
-  freeze. Post-merge conflict validator must PASS before Phase 4.
+  freeze. Post-merge conflict validator must PASS before Phase 4
+  / 4b.
+- Phases 4 (iPhone) and 4b (iPad) run in parallel. Both depend on
+  Phase 3 PASS; neither blocks the other. Both must PASS before
+  Phase 5.
 - Within a phase, dev → validator → fix is sequential; no skipping.
 
 ---
@@ -875,9 +959,11 @@ Everything else is agent-owned.
 
 Ship to TestFlight (iOS) and Play Console internal testing (Android) when:
 
-- All of Phases 0–4 PASS their validators and reviewer agents.
-- Phase 5 checklist items 1–10 PASS on:
+- All of Phases 0–4 and Phase 4b PASS their validators and reviewer
+  agents.
+- Phase 5 checklist items 1–13 PASS on:
   - one iPhone (≥ iPhone 12, iOS ≥ 17)
+  - one iPad (≥ iPad Air 4th gen, iPadOS ≥ 17)
   - one Android phone (Pixel 5+ or equivalent, Android ≥ 12)
 - Bundle size < 40 MB installed.
 - Cold launch < 3s on the above devices.
@@ -893,10 +979,14 @@ re-litigate.
 
 | Concern | v1 decision | Rationale |
 |---|---|---|
-| iPad | Phone-compat only (`requireFullScreen: true`); not a separate iPad layout | Real iPad layout is a v2 effort (split-view, multi-window, pointer); shipping with phone-stretched UI is acceptable for v1 |
-| Push notifications | Out of scope | App is on-demand; no use case |
-| Location permission ("near me") | Out of scope v1 | Hub picker is the entry point; geolocation is a v2 feature |
-| Tile pre-cache for offline | Out of scope | First-launch UX requires network; cached tiles work for return visits |
+| iPad | Tablet-optimized two-pane layout (Phase 4b). Side detail panel, not bottom sheet. Slide Over falls back to phone layout below 600pt width. Pointer support. | iPad usage warrants a real layout; component primitives are reused so the cost is one shell phase running in parallel with Phase 4 |
+| iPad multi-window scenes (UISceneSession) | Out of scope v1 | Requires AppDelegate work; can be added in v2 if user demand exists |
+| iPad hardware-keyboard shortcuts | Out of scope v1 | Nice to have, not load-bearing; v2 polish |
+| Android tablet | Phone-compat in v1 | Lower iPad-equivalent installed base; revisit post-launch |
+| `requireFullScreen` | `false` (default) — app supports multitasking | Required for proper Slide Over / Split View on iPad |
+| Push notifications | Out of scope | App has no backend; would require APNS/FCM credentials, opt-in flow, scheduling service. No use case identified for v1. |
+| Location permission ("near me") | Out of scope v1 | Hub picker is the entry point and works without permission friction; drive times anchored to hub center are acceptable for v1. Adds a permission prompt and edge cases (rural users far from any hub) that aren't worth v1 complexity. |
+| Tile pre-cache for offline | Out of scope | OpenFreeMap tiles cached opportunistically by WebView during normal use, but no proactive download. True offline-first map requires meaningful storage budget and a UX for managing it. Weather data IS cached (MMKV); only map graphics are network-dependent on cold launch. |
 | Offline cold-launch UX | Banner: "No network — last known forecasts." Cached weather + cached hubs render | NWS data is forecast-only; a 6-hour-old forecast is still useful |
 | Deep linking | `dtp://hub/<id>?reasons=<csv>`. Read-only on launch | Mirrors web `?hub=` and `?reasons=` URL params |
 | Dark mode | Honored by `SET_STYLE` to map; native UI follows system theme | Cheap; both MapLibre styles already exist |
@@ -928,7 +1018,9 @@ Steps:
     react-native-reanimated, @expo/vector-icons,
     @sentry/react-native, expo-linking, expo-application.
  5. app.json: bundle IDs, splash, icon (placeholders fine),
-    requireFullScreen: true, scheme: "dtp".
+    `supportsTablet: true`, `requireFullScreen: false` (Slide Over /
+    Split View support), iPad orientations (portrait + landscape),
+    scheme: "dtp".
  6. eas.json: development, preview, production profiles.
  7. Sentry init in App.tsx (placeholder DSN env var).
  8. Port nws.ts → MMKV. Port reasons_to_visit SVG icons → react-native-svg.
@@ -1065,6 +1157,50 @@ Rules:
 
 Validator commands from §6 Phase 3 before reporting. Paste
 transcripts. Confirm git diff --stat shows no changes to frozen
+files.
+```
+
+### Phase 4b iPad agent
+
+```
+Implement iPad-optimized layout per MOBILE_PLAN.md §6 Phase 4b.
+Runs in parallel with Phase 4.
+
+You may NOT modify:
+ - Any frozen file (theme, icons, bridge-protocol, selectors).
+ - Any Phase 3 component (mobile/src/components/{DayChips,
+   WhenPicker, HourRangeSlider, ReasonFilter, SettingsMenu,
+   DestinationList, BottomCardStrip, MobileDetailSheet, HubPicker,
+   RetryBanner}.tsx).
+ - mobile/src/screens/MainScreenPhone.tsx (Phase 4 owns it).
+ - The store schema or selectors.
+
+Create:
+ - mobile/src/screens/MainScreenIPad.tsx — two-pane layout
+   (header strip + DestinationList left + MapWebView right).
+ - mobile/src/components/IPadDetailPanel.tsx — slide-in side panel
+   driven by the same `detailId` store slice as MobileDetailSheet,
+   ~360pt wide, sliding from right edge over the map.
+
+Modify (Phase 4 may also touch this — coordinate via merge after
+both phases PASS):
+ - mobile/App.tsx — runtime layout switch:
+   import { Platform, useWindowDimensions } from 'react-native';
+   const { width } = useWindowDimensions();
+   const isIPad = Platform.OS === 'ios' && Platform.isPad;
+   const isWide = width >= 600;
+   const Screen = (isIPad && isWide) ? MainScreenIPad : MainScreenPhone;
+
+Behavior rules:
+ - Layout reflows on rotation via useWindowDimensions, no remount.
+ - Below 600pt width (Slide Over), fall back to MainScreenPhone.
+ - Pointer hover (Pressable's pressed/hovered states) shows a
+   subtle row highlight on iPad. No popovers on hover.
+ - IPadDetailPanel does not block map gestures when open
+   (z-index, pointer-events on backdrop only when interactive).
+
+Run validator commands from §6 Phase 4b before reporting. Paste
+transcripts. Confirm git diff --stat shows no changes to forbidden
 files.
 ```
 
