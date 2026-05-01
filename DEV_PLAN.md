@@ -175,6 +175,15 @@ For each phase, this table tells me exactly what to run.
 - Both modify `mobile/App.tsx`, but only Phase 4b adds the layout-switch logic; Phase 4 should leave a stub that imports `MainScreenPhone` directly. Merge resolves to Phase 4b's switch.
 - Neither phase modifies frozen files or Phase 3 components.
 
+### Phase 5.0 — Bundle ID swap (agent-driven, before device build)
+
+| Step | Action |
+|---|---|
+| 5.0.1 | Check if `rajatsinghal.dev` is registered (user notifies via "domain ready" or proceeds with dev bundle ID). |
+| 5.0.2 | If yes: dispatch a small **Developer** agent to edit `mobile/app.json` (ios.bundleIdentifier + android.package → `dev.rajatsinghal.daytripplanner`), run `npx expo prebuild --clean`, re-run cross-phase regression. |
+| 5.0.3 | Commit `Swap to launch bundle ID`. |
+| 5.0.4 | If no: proceed with `io.github.rajatsinghal.daytripplanner`; user can swap before TestFlight later. |
+
 ### Phase 5 — Device validation
 
 | Step | Action |

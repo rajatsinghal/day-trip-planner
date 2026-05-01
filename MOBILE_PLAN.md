@@ -742,6 +742,26 @@ shell layout and detail-presentation pattern differ.
 
 The one phase that genuinely requires human involvement.
 
+**Phase 5.0 — Bundle ID swap (agent-driven, before device build):**
+
+If the user has registered `rajatsinghal.dev`, swap the development
+bundle ID `io.github.rajatsinghal.daytripplanner` to the launch
+bundle ID `dev.rajatsinghal.daytripplanner` before any TestFlight
+upload. If the domain is not yet registered, skip this step and run
+Phase 5 with the dev bundle ID; swap later before TestFlight.
+
+Agent steps:
+1. Edit `mobile/app.json`: `ios.bundleIdentifier` and
+   `android.package` set to `dev.rajatsinghal.daytripplanner`.
+   URL scheme stays `dtp`.
+2. Run `npx expo prebuild --clean` to regenerate native projects.
+3. Re-run cross-phase regression (typecheck + smoke tests).
+4. Commit the swap with message `Swap to launch bundle ID`.
+
+After this, the user provisions Apple Developer App ID and Google
+Play Console entry against the new ID (out-of-band; one-time at
+launch).
+
 **Entry gate (must PASS before user touches a device):**
 
 | Check | Command | Expected |
@@ -749,6 +769,7 @@ The one phase that genuinely requires human involvement.
 | Cross-phase regression | `cd mobile && npx tsc --noEmit && npm test` | exit 0; all phase smoke tests still pass |
 | Frozen files unchanged since Phase 2.5 | `bash mobile/scripts/check-frozen.sh` | exit 0 |
 | App exports cleanly | `cd mobile && npx expo export` | exit 0 |
+| Bundle ID is launch ID (if swap done) | `grep -E "dev\\.rajatsinghal\\.daytripplanner\|io\\.github\\.rajatsinghal\\.daytripplanner" mobile/app.json` | one match |
 
 **Scope:**
 - User runs `cd mobile && npx expo run:ios` (or EAS Build →
@@ -1004,7 +1025,9 @@ re-litigate.
 
 | Concern | v1 decision | Rationale |
 |---|---|---|
-| Bundle ID pattern | TBD pending user — `io.github.<gh-username>.daytripplanner` if no domain, `dev.<name>.daytripplanner` or `com.<domain>.daytripplanner` if domain owned | Portfolio of open-source utility apps benefits from a unified namespace; locked at Phase 0 dispatch |
+| Bundle ID (development) | `io.github.rajatsinghal.daytripplanner` | Free GitHub-namespaced ID; ships with all Phase 0–4b builds |
+| Bundle ID (launch) | `dev.rajatsinghal.daytripplanner` | Final ID after `rajatsinghal.dev` is registered. Pre-launch swap stage in Phase 5 entry. iOS package + Android package + URL scheme stays `dtp` |
+| Bundle ID swap timing | Before first TestFlight upload (Phase 5 entry) | Bundle ID is locked once published; swap before any App Store record exists is trivial |
 | App icon + splash | Generated via `~/Code/tut-ai/dev-tools` image-gen script; placeholders during Phase 0–4b; real assets generated when Phase 5 launches | Tool exists locally; final assets need actual layouts to match |
 | Privacy policy | Hosted on GitHub repo (markdown) or domain landing page; URL provided during App Store submission | Apple requires a publicly accessible privacy policy URL per app |
 | iPad | Tablet-optimized two-pane layout (Phase 4b). Side detail panel, not bottom sheet. Slide Over falls back to phone layout below 600pt width. Pointer support. | iPad usage warrants a real layout; component primitives are reused so the cost is one shell phase running in parallel with Phase 4 |
@@ -1046,10 +1069,14 @@ Steps:
     react-native-svg, react-native-gesture-handler,
     react-native-reanimated, @expo/vector-icons,
     @sentry/react-native, expo-linking, expo-application.
- 5. app.json: bundle IDs, splash, icon (placeholders fine),
-    `supportsTablet: true`, `requireFullScreen: false` (Slide Over /
-    Split View support), iPad orientations (portrait + landscape),
-    scheme: "dtp".
+ 5. app.json:
+      - `ios.bundleIdentifier`: `io.github.rajatsinghal.daytripplanner`
+      - `android.package`: `io.github.rajatsinghal.daytripplanner`
+      - `scheme`: `dtp`
+      - `supportsTablet: true`, `requireFullScreen: false` (for
+        Slide Over / Split View on iPad), iPad orientations
+        (portrait + landscape).
+      - Splash, icon: placeholders fine for now.
  6. eas.json: development, preview, production profiles.
  7. Sentry init in App.tsx (placeholder DSN env var).
  8. Port nws.ts → MMKV. Port reasons_to_visit SVG icons → react-native-svg.
