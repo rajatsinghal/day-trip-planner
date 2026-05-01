@@ -647,6 +647,11 @@ non-trivial overlap → FAIL → escalate.
   no ACK in 1.5s → `forceReload` + re-handshake.
 - Deep link entry: `linking.ts` parses URL → store hydration.
 - RetryBanner: shows when `selectAnyFailed`. Tap → `retryFailed`.
+- **TileFallbackBanner**: small inline banner shown when the map
+  WebView has reported `TILE_ERROR` AND `NetInfo` reports offline.
+  Copy: "Connect to load map graphics — pins and forecasts work
+  offline." Auto-hides when connectivity returns and tiles render.
+  ~5 lines + one bridge `TILE_ERROR` listener.
 - Root `App.tsx` chooses screen at runtime via
   `Platform.isPad || (Platform.OS === 'ios' && minDim >= 768)` →
   renders `MainScreenIPad` (Phase 4b output) on iPad, else
@@ -855,11 +860,17 @@ numbers, confirm fixes by re-running specific items.
   developer→validator→fix loop and the reviewer→fix loop. Any
   combination of fix passes above 3 escalates. Reviewer-triggered
   fixes are not bonus passes.
-- **Reviewer agent:** runs once per phase after validator PASS.
-  Opus model. Job is to find runtime-break risks the validator
-  can't catch (race conditions, missing keyExtractor, useEffect
-  deps, etc.). May trigger one fix pass before final PASS, charged
-  against the global 3-pass budget.
+- **Reviewer fan-out:** after validator PASS, four reviewers run
+  in parallel. Each looks at the diff from a different angle. Their
+  findings merge into a single fix-spec list before any fix is
+  applied. Charged against the global 3-pass budget.
+
+  | Reviewer | Model | Focus |
+  |---|---|---|
+  | Runtime risk | opus | Races, useEffect deps, FlatList keyExtractor, malformed bridge JSON, AppState empty-store reads, MMKV first-render hydration, postMessage > 64 KB |
+  | Security | opus | Deep link injection (validate hub IDs against known list, reject malformed `?reasons=`), postMessage payload validation in WebView handler, MMKV unencrypted sensitive data check (none expected, but verify), WebView `originWhitelist` correctness, `injectJavaScript` payload sanitization |
+  | Accessibility | sonnet | `accessibilityLabel` + `accessibilityRole` on every Pressable, color-contrast pairs against WCAG AA, hit target ≥ 44pt, font-scaling cap honored, screen-reader-only sibling list for the map (since map pins are not accessible to VoiceOver/TalkBack) |
+  | Performance | sonnet | React re-render patterns (selectors used with `useShallow`), `useMemo` dep arrays, `FlatList` `getItemLayout` for known heights, image asset sizes, bundle size delta vs prior phase, no inline anonymous handlers passed to memoized children |
 - **Frozen-file global guard:** a pre-commit hook
   (`mobile/scripts/check-frozen.sh`) fails any commit touching files
   that contain the `// FROZEN as of Phase 2.5` marker unless the
@@ -943,15 +954,29 @@ Used by all Phase 3 component agents.
 
 ## 10. Minimum human engagement
 
-You only need to engage at:
+Phases 0 → 1 → 2 → 2.5 → 3 → 4 ∥ 4b run **autonomously**. No
+per-phase sign-off. Each phase's PASS reports and fix logs are
+committed so they can be audited retrospectively, but the next
+phase dispatches automatically once the prior phase passes.
 
-1. Kick off each phase ("proceed with Phase N").
-2. Sign off ("next") after reading validator final PASS.
-3. Phase 5: run device builds, walk checklist, report failure
-   item numbers.
-4. Escalations: 3-pass loop without PASS.
+You engage only at:
 
-Everything else is agent-owned.
+1. **Phase 4b PASS** — ready for Phase 5. I notify you with a
+   summary; you build and run the device checklist.
+2. **3-pass cap exhausted** — true blocker on any phase. I surface
+   the escalation payload (failing checks, attempts, hypothesis,
+   specific input requested). You decide.
+3. **Out-of-band actions** — anything I can't do myself: providing
+   the GitHub username for bundle ID, registering the domain,
+   provisioning Apple/Google credentials at launch, generating
+   final app assets via your image-gen tool when prompted.
+
+Everything else is agent-owned, including:
+- Validator and reviewer fan-out per phase.
+- Fix loops within each phase.
+- Inter-phase dispatching.
+- Cross-phase regression checking.
+- Commit messages summarizing each phase outcome.
 
 ---
 
@@ -979,6 +1004,9 @@ re-litigate.
 
 | Concern | v1 decision | Rationale |
 |---|---|---|
+| Bundle ID pattern | TBD pending user — `io.github.<gh-username>.daytripplanner` if no domain, `dev.<name>.daytripplanner` or `com.<domain>.daytripplanner` if domain owned | Portfolio of open-source utility apps benefits from a unified namespace; locked at Phase 0 dispatch |
+| App icon + splash | Generated via `~/Code/tut-ai/dev-tools` image-gen script; placeholders during Phase 0–4b; real assets generated when Phase 5 launches | Tool exists locally; final assets need actual layouts to match |
+| Privacy policy | Hosted on GitHub repo (markdown) or domain landing page; URL provided during App Store submission | Apple requires a publicly accessible privacy policy URL per app |
 | iPad | Tablet-optimized two-pane layout (Phase 4b). Side detail panel, not bottom sheet. Slide Over falls back to phone layout below 600pt width. Pointer support. | iPad usage warrants a real layout; component primitives are reused so the cost is one shell phase running in parallel with Phase 4 |
 | iPad multi-window scenes (UISceneSession) | Out of scope v1 | Requires AppDelegate work; can be added in v2 if user demand exists |
 | iPad hardware-keyboard shortcuts | Out of scope v1 | Nice to have, not load-bearing; v2 polish |
@@ -987,6 +1015,7 @@ re-litigate.
 | Push notifications | Out of scope | App has no backend; would require APNS/FCM credentials, opt-in flow, scheduling service. No use case identified for v1. |
 | Location permission ("near me") | Out of scope v1 | Hub picker is the entry point and works without permission friction; drive times anchored to hub center are acceptable for v1. Adds a permission prompt and edge cases (rural users far from any hub) that aren't worth v1 complexity. |
 | Tile pre-cache for offline | Out of scope | OpenFreeMap tiles cached opportunistically by WebView during normal use, but no proactive download. True offline-first map requires meaningful storage budget and a UX for managing it. Weather data IS cached (MMKV); only map graphics are network-dependent on cold launch. |
+| No-tiles fallback UI | `TileFallbackBanner` shown when WebView reports `TILE_ERROR` AND `NetInfo` reports offline. Wired in Phase 4 / 4b. | Mitigates the worst tile-deferral UX (silent blank gray map) without the engineering cost of a real pre-cache; ~5 lines |
 | Offline cold-launch UX | Banner: "No network — last known forecasts." Cached weather + cached hubs render | NWS data is forecast-only; a 6-hour-old forecast is still useful |
 | Deep linking | `dtp://hub/<id>?reasons=<csv>`. Read-only on launch | Mirrors web `?hub=` and `?reasons=` URL params |
 | Dark mode | Honored by `SET_STYLE` to map; native UI follows system theme | Cheap; both MapLibre styles already exist |
