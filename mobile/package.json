@@ -7,6 +7,9 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "build-sprites": "tsx scripts/build-sprites.ts",
+    "build-map-html": "tsx scripts/build-map-html.ts",
+    "build-map": "npm run build-sprites && npm run build-map-html",
     "test": "jest"
   },
   "dependencies": {
@@ -30,8 +33,25 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "@types/react": "~19.1.0",
+    "canvas": "^2.11.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.9",
+    "tsx": "^4.21.0",
     "typescript": "~5.9.2"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": [
+      "<rootDir>/__tests__/**/*.test.ts",
+      "<rootDir>/__tests__/**/*.test.tsx"
+    ],
+    "moduleNameMapper": {
+      "^@dtp/core$": "<rootDir>/../packages/core/src/index.ts",
+      "^@dtp/core/(.*)$": "<rootDir>/../packages/core/src/$1"
+    }
   },
   "private": true
 }

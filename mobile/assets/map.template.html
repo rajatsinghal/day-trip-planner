@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>map</title>
+  <style>
+    /*__MAPLIBRE_CSS__*/
+    html, body, #map { margin: 0; padding: 0; height: 100%; width: 100%; background: #f8fafc; overscroll-behavior: none; }
+    .home-pin { font-size: 22px; line-height: 1; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    // -----------------------------------------------------------------
+    // BOOTSTRAP — register window.handleNativeMessage SYNCHRONOUSLY
+    // before anything else, so any race where native injects
+    // injectJavaScript('handleNativeMessage(...)') before the rest of
+    // the script has run still finds a handler. The real applyMessage
+    // implementation replaces the placeholder once the main script
+    // loads, so bootstrap-queued messages flow through identical logic.
+    // -----------------------------------------------------------------
+    var applyMessage = function (msg) {
+      // Default: queue until the real implementation reassigns this
+      // var. The real applyMessage drains __pendingNativeQueue.
+      (window.__pendingNativeQueue = window.__pendingNativeQueue || []).push(msg);
+    };
+    window.handleNativeMessage = function (msgOrString) {
+      try {
+        var msg = typeof msgOrString === 'string' ? JSON.parse(msgOrString) : msgOrString;
+        applyMessage(msg);
+      } catch (e) {
+        try {
+          if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'LOG', level: 'error', message: 'handle msg parse: ' + String(e),
+            }));
+          }
+        } catch (e2) { /* drop */ }
+      }
+    };
+
+    function postToNative(msg) {
+      try {
+        if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+          window.ReactNativeWebView.postMessage(JSON.stringify(msg));
+        }
+      } catch (e) {
+        // Best-effort logging — drop if even this fails.
+      }
+    }
+
+    function logToNative(level, message) {
+      postToNative({ type: 'LOG', level: level, message: String(message) });
+    }
+  </script>
+
+  <script>
+    /*__MAPLIBRE_JS__*/
+  </script>
+
+  <script>
+    (function () {
+      // ---------------------------------------------------------------
+      // STATE
+      // ---------------------------------------------------------------
+      var map = null;
+      var homeMarker = null;
+      var initialized = false;     // true after MAP_INITIALIZED posted
+      var inited = false;          // true after first INIT received
+      var currentHubId = null;
+      var pinFeatures = {};        // destId -> GeoJSON feature
+      var selectedDestId = null;
+
+      // Track lastAppliedSeq per message type so out-of-order/stale
+      // messages can be dropped. Reset to 0 on every fresh INIT.
+      var lastAppliedSeq = {
+        INIT: 0,
+        SET_PINS: 0,
+        FLY_TO: 0,
+        SET_SELECTED: 0,
+        SET_STYLE: 0,
+        HEARTBEAT: 0,
+      };
+
+      // Queue messages until INIT has been processed; INIT is processed
+      // in-line. After INIT, also queue messages until style has loaded.
+      var preInitQueue = [];
+      var preStyleQueue = [];
+
+      // ---------------------------------------------------------------
+      // FIELD-TYPE VALIDATION — reject obviously malformed messages so
+      // a buggy native side can't blow up the dispatcher. Not exhaustive.
+      // ---------------------------------------------------------------
+      function isFiniteNum(n) { return typeof n === 'number' && isFinite(n); }
+      function isValid(msg) {
+        if (!msg || typeof msg !== 'object' || typeof msg.type !== 'string') return false;
+        switch (msg.type) {
+          case 'INIT':
+            return msg.center && isFiniteNum(msg.center.lat) && isFiniteNum(msg.center.lon)
+              && typeof msg.center.name === 'string' && typeof msg.styleUrl === 'string';
+          case 'SET_PINS':
+            if (typeof msg.hubId !== 'string' || !Array.isArray(msg.pins)) return false;
+            for (var i = 0; i < msg.pins.length; i++) {
+              var p = msg.pins[i];
+              if (!p || typeof p.id !== 'string' || typeof p.iconImage !== 'string'
+                || !isFiniteNum(p.lat) || !isFiniteNum(p.lon)) return false;
+            }
+            return true;
+          case 'FLY_TO':       return typeof msg.destId === 'string';
+          case 'SET_SELECTED': return msg.destId === null || typeof msg.destId === 'string';
+          case 'SET_STYLE':    return typeof msg.styleUrl === 'string';
+          case 'HEARTBEAT':    return typeof msg.nonce === 'string';
+          default: return false;
+        }
+      }
+
+      // ---------------------------------------------------------------
+      // MESSAGE DISPATCH
+      // ---------------------------------------------------------------
+      function realApplyMessage(msg) {
+        if (!isValid(msg)) {
+          logToNative('warn', 'rejected malformed message: ' + (msg && msg.type));
+          return;
+        }
+
+        // HEARTBEAT runs before any init gate — it's a liveness check
+        // on the JS context, doesn't need the map. Always reply.
+        if (msg.type === 'HEARTBEAT') {
+          postToNative({ type: 'HEARTBEAT_ACK', nonce: msg.nonce });
+          return;
+        }
+
+        // INIT: bootstraps the map. Reset all seq counters.
+        if (msg.type === 'INIT') {
+          // INIT itself uses seq for ordering vs. earlier INITs.
+          if (typeof msg.seq === 'number' && msg.seq < lastAppliedSeq.INIT) {
+            return; // stale INIT
+          }
+          if (typeof msg.seq === 'number') lastAppliedSeq.INIT = msg.seq;
+          // A fresh INIT resets every other lastAppliedSeq so that
+          // subsequent traffic for the new hub isn't blocked by stale
+          // counter values.
+          lastAppliedSeq.SET_PINS = 0;
+          lastAppliedSeq.FLY_TO = 0;
+          lastAppliedSeq.SET_SELECTED = 0;
+          lastAppliedSeq.SET_STYLE = 0;
+          lastAppliedSeq.HEARTBEAT = 0;
+          handleInit(msg);
+          // Drain anything queued before INIT.
+          var pq = preInitQueue.slice();
+          preInitQueue = [];
+          for (var qi = 0; qi < pq.length; qi++) realApplyMessage(pq[qi]);
+          return;
+        }
+
+        // Any non-INIT message before INIT goes to the pre-init queue.
+        if (!inited) {
+          preInitQueue.push(msg);
+          return;
+        }
+
+        // After INIT but before style.load, the map's source/layer
+        // calls would fail. Buffer these in preStyleQueue.
+        if (!initialized) {
+          preStyleQueue.push(msg);
+          return;
+        }
+
+        dispatchAfterInit(msg);
+      }
+
+      function dispatchAfterInit(msg) {
+        var t = msg.type;
+        if (typeof msg.seq === 'number' && msg.seq <= lastAppliedSeq[t]) {
+          // stale seq — drop silently. logToNative would be noisy.
+          return;
+        }
+        if (typeof msg.seq === 'number') lastAppliedSeq[t] = msg.seq;
+
+        switch (t) {
+          case 'SET_PINS':       return handleSetPins(msg);
+          case 'FLY_TO':         return handleFlyTo(msg);
+          case 'SET_SELECTED':   return handleSetSelected(msg);
+          case 'SET_STYLE':      return handleSetStyle(msg);
+          default:
+            logToNative('warn', 'unknown message type: ' + t);
+        }
+      }
+
+      // ---------------------------------------------------------------
+      // INIT HANDLER
+      // ---------------------------------------------------------------
+      function handleInit(msg) {
+        inited = true;
+
+        if (map) {
+          // Re-INIT (probably after a style swap or full reload). Tear
+          // down and rebuild.
+          try { map.remove(); } catch (e) { /* ignore */ }
+          map = null;
+          homeMarker = null;
+          pinFeatures = {};
+          selectedDestId = null;
+          initialized = false;
+        }
+
+        try {
+          map = new maplibregl.Map({
+            container: 'map',
+            style: msg.styleUrl,
+            center: [msg.center.lon, msg.center.lat],
+            zoom: 7.2,
+            attributionControl: { compact: true, customAttribution: '' },
+          });
+        } catch (e) {
+          postToNative({ type: 'MAP_ERROR', code: 'unknown', message: String(e && e.message || e) });
+          return;
+        }
+
+        wireErrorHandlers(map, msg.center);
+
+        // .once so this handler only fires for the initial style load —
+        // handleSetStyle registers its own once-handler for subsequent
+        // setStyle calls.
+        map.once('style.load', function () {
+          installSpriteLayer(map, msg.center);
+          initialized = true;
+          postToNative({ type: 'MAP_INITIALIZED', styleLoaded: true });
+          // Drain queue — pins/selection/etc. that arrived before style.
+          var q = preStyleQueue.slice();
+          preStyleQueue = [];
+          for (var i = 0; i < q.length; i++) dispatchAfterInit(q[i]);
+        });
+      }
+
+      function wireErrorHandlers(m, center) {
+        // WebGL context loss — older iOS / GPU pressure. Native will
+        // .reload() and re-handshake.
+        var canvas = m.getCanvas && m.getCanvas();
+        if (canvas) {
+          canvas.addEventListener('webglcontextlost', function (e) {
+            try { e.preventDefault(); } catch (err) { /* noop */ }
+            postToNative({
+              type: 'MAP_ERROR',
+              code: 'webgl-context-lost',
+              message: 'WebGL context lost',
+            });
+          }, false);
+        }
+
+        // MapLibre fires 'error' for tile fetches and style errors. Pull
+        // out the cases we care about and forward.
+        m.on('error', function (ev) {
+          var sourceId = (ev && ev.sourceId) || 'unknown';
+          var statusCode = ev && ev.error && (ev.error.status || ev.error.statusCode);
+          var url = ev && ev.error && (ev.error.url || (ev.tile && ev.tile.url)) || '';
+          if (sourceId && sourceId !== 'unknown') {
+            postToNative({
+              type: 'TILE_ERROR',
+              sourceId: sourceId,
+              status: typeof statusCode === 'number' ? statusCode : undefined,
+              url: String(url),
+            });
+            return;
+          }
+          // Generic error — surface as MAP_ERROR but only if it looks
+          // style-related; tile errors above are noisy.
+          var msg = (ev && ev.error && ev.error.message) || 'unknown error';
+          postToNative({
+            type: 'MAP_ERROR',
+            code: 'style-load-failed',
+            message: String(msg),
+          });
+        });
+      }
+
+      // ---------------------------------------------------------------
+      // SPRITE SHEET + PIN LAYER
+      // ---------------------------------------------------------------
+      function installSpriteLayer(m, center) {
+        // Home pin — the one allowed DOM marker. Idempotent: remove any
+        // prior marker before adding so re-entry doesn't double-pin.
+        if (homeMarker) {
+          try { homeMarker.remove(); } catch (e) { /* ignore */ }
+          homeMarker = null;
+        }
+        var homeEl = document.createElement('div');
+        homeEl.className = 'home-pin';
+        homeEl.textContent = '🏠';
+        homeEl.title = center.name || '';
+        homeMarker = new maplibregl.Marker({ element: homeEl })
+          .setLngLat([center.lon, center.lat])
+          .setPopup(new maplibregl.Popup({ offset: 18 }).setText(center.name || ''))
+          .addTo(m);
+
+        // Empty source for the destination pins. SET_PINS replaces the
+        // entire feature collection — no deltas.
+        if (!m.getSource('pins')) {
+          m.addSource('pins', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] },
+          });
+        }
+
+        loadSpriteImages(m, function () {
+          if (!m.getLayer('pins-layer')) {
+            m.addLayer({
+              id: 'pins-layer',
+              type: 'symbol',
+              source: 'pins',
+              layout: {
+                'icon-image': ['get', 'iconImage'],
+                'icon-allow-overlap': true,
+                'icon-ignore-placement': true,
+                'icon-size': 1,
+                'icon-anchor': 'center',
+              },
+            });
+          }
+
+          // Tap handler — straight into PIN_TAPPED.
+          m.on('click', 'pins-layer', function (e) {
+            var f = e && e.features && e.features[0];
+            if (!f || !f.properties) return;
+            var destId = f.properties.id;
+            if (destId) postToNative({ type: 'PIN_TAPPED', destId: destId });
+          });
+
+          // Pointer cursor on hover (desktop / iPad pointer support).
+          m.on('mouseenter', 'pins-layer', function () { m.getCanvas().style.cursor = 'pointer'; });
+          m.on('mouseleave', 'pins-layer', function () { m.getCanvas().style.cursor = ''; });
+        });
+      }
+
+      // Load sprites declared in sprites.json into the map's image cache.
+      // We support two strategies, in order of preference:
+      //   1. fetch sprites.json + sprites.png from the bundled assets
+      //      (relative to the document URL).
+      //   2. fall back to placeholder colored circles drawn via canvas
+      //      so the layer still works in dev / when the sprite sheet
+      //      isn't present yet.
+      function loadSpriteImages(m, done) {
+        var doc = document.documentURI || '';
+        var jsonUrl = './sprites.json';
+        var pngUrl = './sprites.png';
+
+        function addPlaceholders() {
+          // Render small solid-color circles at runtime. Keeps the layer
+          // usable even in tests / before build-sprites has run.
+          var keys = [
+            ['pin-clear', '#fde047'],
+            ['pin-clear-selected', '#fde047'],
+            ['pin-cloudy', '#e2e8f0'],
+            ['pin-cloudy-selected', '#e2e8f0'],
+            ['pin-rain', '#94a3b8'],
+            ['pin-rain-selected', '#94a3b8'],
+            ['pin-snow', '#bae6fd'],
+            ['pin-snow-selected', '#bae6fd'],
+            ['pin-thunder', '#475569'],
+            ['pin-thunder-selected', '#475569'],
+            ['pin-fog', '#e2e8f0'],
+            ['pin-fog-selected', '#e2e8f0'],
+            ['pin-loading', '#f8fafc'],
+          ];
+          for (var i = 0; i < keys.length; i++) {
+            var key = keys[i][0];
+            var color = keys[i][1];
+            if (!m.hasImage(key)) m.addImage(key, makeCircleImage(color, 28, key.indexOf('-selected') >= 0));
+          }
+          done();
+        }
+
+        function makeCircleImage(color, size, selected) {
+          var c = document.createElement('canvas');
+          c.width = size; c.height = size;
+          var ctx = c.getContext('2d');
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(size / 2, size / 2, size / 2 - (selected ? 2 : 1), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.lineWidth = selected ? 2 : 1;
+          ctx.strokeStyle = selected ? '#0f172a' : '#cbd5e1';
+          ctx.stroke();
+          var data = ctx.getImageData(0, 0, size, size);
+          return { width: size, height: size, data: new Uint8Array(data.data.buffer) };
+        }
+
+        fetch(jsonUrl).then(function (r) {
+          if (!r.ok) throw new Error('no sprites.json');
+          return r.json();
+        }).then(function (manifest) {
+          // We rely on MapLibre's `addImage` to register each sub-image
+          // from a single sprite PNG. Easiest path: load the PNG once,
+          // then crop via offscreen canvas per manifest entry.
+          var img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = function () {
+            var off = document.createElement('canvas');
+            var keys = Object.keys(manifest);
+            for (var i = 0; i < keys.length; i++) {
+              var key = keys[i];
+              var f = manifest[key];
+              off.width = f.width;
+              off.height = f.height;
+              var octx = off.getContext('2d');
+              octx.clearRect(0, 0, f.width, f.height);
+              octx.drawImage(img, f.x, f.y, f.width, f.height, 0, 0, f.width, f.height);
+              var data = octx.getImageData(0, 0, f.width, f.height);
+              if (!m.hasImage(key)) {
+                m.addImage(key, { width: f.width, height: f.height, data: new Uint8Array(data.data.buffer) }, { pixelRatio: f.pixelRatio || 1 });
+              }
+            }
+            done();
+          };
+          img.onerror = function () { addPlaceholders(); };
+          img.src = pngUrl;
+        }).catch(function () {
+          addPlaceholders();
+        });
+      }
+
+      // ---------------------------------------------------------------
+      // POST-INIT HANDLERS
+      // ---------------------------------------------------------------
+      function handleSetPins(msg) {
+        if (!map) return;
+        currentHubId = msg.hubId;
+        pinFeatures = {};
+        var pins = Array.isArray(msg.pins) ? msg.pins : [];
+        var features = [];
+        for (var i = 0; i < pins.length; i++) {
+          var p = pins[i];
+          if (!p || typeof p.id !== 'string') continue;
+          var iconImage = p.loading ? 'pin-loading'
+            : (p.selected ? p.iconImage + '-selected' : p.iconImage);
+          var feat = {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [p.lon, p.lat] },
+            properties: {
+              id: p.id,
+              iconImage: iconImage,
+              baseIcon: p.iconImage,
+              loading: !!p.loading,
+              selected: !!p.selected,
+            },
+          };
+          features.push(feat);
+          pinFeatures[p.id] = feat;
+        }
+        var src = map.getSource('pins');
+        if (src && src.setData) {
+          src.setData({ type: 'FeatureCollection', features: features });
+        }
+      }
+
+      function handleFlyTo(msg) {
+        if (!map) return;
+        var f = pinFeatures[msg.destId];
+        if (!f) return;
+        var coords = f.geometry.coordinates;
+        map.flyTo({ center: coords, zoom: Math.max(map.getZoom(), 8), duration: 700 });
+      }
+
+      function handleSetSelected(msg) {
+        if (!map) return;
+        var nextId = msg.destId || null;
+        if (nextId === selectedDestId) return;
+        var prevId = selectedDestId;
+        selectedDestId = nextId;
+        // Update icon image on the affected features and re-set source data.
+        var ids = Object.keys(pinFeatures);
+        var changed = false;
+        for (var i = 0; i < ids.length; i++) {
+          var id = ids[i];
+          var f = pinFeatures[id];
+          var shouldBeSelected = id === nextId;
+          if (f.properties.selected !== shouldBeSelected) {
+            f.properties.selected = shouldBeSelected;
+            f.properties.iconImage = f.properties.loading
+              ? 'pin-loading'
+              : (shouldBeSelected ? f.properties.baseIcon + '-selected' : f.properties.baseIcon);
+            changed = true;
+          }
+          // Defensive: also ensure if id matches prevId and not next we
+          // already cleared it above.
+          void prevId;
+        }
+        if (changed) {
+          var feats = [];
+          for (var j = 0; j < ids.length; j++) feats.push(pinFeatures[ids[j]]);
+          var src = map.getSource('pins');
+          if (src && src.setData) src.setData({ type: 'FeatureCollection', features: feats });
+        }
+      }
+
+      function handleSetStyle(msg) {
+        if (!map) return;
+        initialized = false;
+        try {
+          map.setStyle(msg.styleUrl);
+        } catch (e) {
+          postToNative({ type: 'MAP_ERROR', code: 'style-load-failed', message: String(e && e.message || e) });
+          return;
+        }
+        map.once('style.load', function () {
+          // setStyle drops sources/layers — re-install ours.
+          if (homeMarker) {
+            try { homeMarker.remove(); } catch (err) { /* ignore */ }
+            homeMarker = null;
+          }
+          // We keep currentCenter on the map's own state.
+          var c = map.getCenter();
+          installSpriteLayer(map, { lat: c.lat, lon: c.lng, name: '' });
+          // Replay the most recent pin set (if any).
+          if (Object.keys(pinFeatures).length) {
+            var feats = [];
+            var ids = Object.keys(pinFeatures);
+            for (var i = 0; i < ids.length; i++) feats.push(pinFeatures[ids[i]]);
+            var src = map.getSource('pins');
+            if (src && src.setData) src.setData({ type: 'FeatureCollection', features: feats });
+          }
+          initialized = true;
+          postToNative({ type: 'MAP_INITIALIZED', styleLoaded: true });
+        });
+      }
+
+      // ---------------------------------------------------------------
+      // INSTALL REAL APPLY + DRAIN BOOTSTRAP QUEUE + POST MAP_READY
+      // ---------------------------------------------------------------
+      // Reassign the outer (bootstrap-declared) applyMessage var so the
+      // already-installed window.handleNativeMessage routes through the
+      // real implementation. No wrapper rebind needed.
+      applyMessage = realApplyMessage;
+
+      // Drain any messages that may have arrived during script load.
+      var bootstrap = window.__pendingNativeQueue || [];
+      window.__pendingNativeQueue = null;
+      for (var i = 0; i < bootstrap.length; i++) applyMessage(bootstrap[i]);
+
+      function announceReady() {
+        postToNative({ type: 'MAP_READY' });
+      }
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(announceReady, 0);
+      } else {
+        document.addEventListener('DOMContentLoaded', announceReady);
+      }
+    })();
+  </script>
+</body>
+</html>
