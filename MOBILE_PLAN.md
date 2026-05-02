@@ -575,8 +575,7 @@ they will drift in incompatible directions.
 |---|---|---|
 | Theme files exist | `ls mobile/src/theme/{colors,spacing,typography}.ts` | all 3 |
 | ReasonIcon exported | `grep -n "export.*ReasonIcon" mobile/src/icons/reason-icon.tsx` | 1 match |
-| Freeze markers in place | `grep -l "FROZEN as of Phase 2.5" mobile/src/{theme,map,store,icons}/*.ts` | ≥ 6 files |
-| Pre-commit guard installed | `test -x mobile/scripts/check-frozen.sh && git config core.hooksPath \| grep -E "."` | exit 0; hook runs on commit |
+| Freeze markers in place | `grep -l "FROZEN as of Phase 2.5" mobile/src/theme/*.ts mobile/src/icons/reason-icon.tsx mobile/src/map/bridge-protocol.ts mobile/src/store/selectors.ts \| wc -l` | = 6 |
 | Typecheck | `cd mobile && npx tsc --noEmit` | exit 0 |
 
 ---
@@ -767,7 +766,7 @@ launch).
 | Check | Command | Expected |
 |---|---|---|
 | Cross-phase regression | `cd mobile && npx tsc --noEmit && npm test` | exit 0; all phase smoke tests still pass |
-| Frozen files unchanged since Phase 2.5 | `bash mobile/scripts/check-frozen.sh` | exit 0 |
+| Frozen files unchanged since Phase 2.5 commit | `git diff --stat <phase-2.5-sha>..HEAD -- mobile/src/theme mobile/src/icons/reason-icon.tsx mobile/src/map/bridge-protocol.ts mobile/src/store/selectors.ts` | empty (no diff) |
 | App exports cleanly | `cd mobile && npx expo export` | exit 0 |
 | Bundle ID is launch ID (if swap done) | `grep -E "dev\\.rajatsinghal\\.daytripplanner\|io\\.github\\.rajatsinghal\\.daytripplanner" mobile/app.json` | one match |
 
@@ -892,12 +891,14 @@ numbers, confirm fixes by re-running specific items.
   | Security | opus | Deep link injection (validate hub IDs against known list, reject malformed `?reasons=`), postMessage payload validation in WebView handler, MMKV unencrypted sensitive data check (none expected, but verify), WebView `originWhitelist` correctness, `injectJavaScript` payload sanitization |
   | Accessibility | sonnet | `accessibilityLabel` + `accessibilityRole` on every Pressable, color-contrast pairs against WCAG AA, hit target ≥ 44pt, font-scaling cap honored, screen-reader-only sibling list for the map (since map pins are not accessible to VoiceOver/TalkBack) |
   | Performance | sonnet | React re-render patterns (selectors used with `useShallow`), `useMemo` dep arrays, `FlatList` `getItemLayout` for known heights, image asset sizes, bundle size delta vs prior phase, no inline anonymous handlers passed to memoized children |
-- **Frozen-file global guard:** a pre-commit hook
-  (`mobile/scripts/check-frozen.sh`) fails any commit touching files
-  that contain the `// FROZEN as of Phase 2.5` marker unless the
-  commit message contains the exact token `Phase 2.5 amendment`.
-  Installed in Phase 2.5. Catches accidental modification by any
-  later-phase fix agent.
+- **Frozen-file enforcement:** every Phase 3 / 4 / 4b validator runs
+  `git diff --stat` against the frozen paths (theme, icons,
+  bridge-protocol, selectors). Any change to a frozen path makes that
+  phase's validator FAIL, which triggers the fix loop. The freeze
+  marker (`// FROZEN as of Phase 2.5`) is the contract that agents
+  read in their prompts; the validator is the enforcement. No git
+  hook is used — repo-wide hook config adds friction for legitimate
+  workflow and is bypassable with `--no-verify` anyway.
 - **Cross-phase regression:** every phase's validator re-runs the
   prior phases' command-based checks (typecheck and smoke tests).
   If any prior phase regresses, current phase FAILS.

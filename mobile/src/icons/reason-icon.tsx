@@ -1,3 +1,5 @@
+// FROZEN as of Phase 2.5 — modifications require a Phase 2.5 amendment.
+//
 // Wrapper component: renders the icon for a given ReasonsToVisit value.
 // WaterfallIcon and MuseumIcon use react-native-svg; all others use emoji Text.
 import React from 'react';

@@ -1,3 +1,5 @@
+// FROZEN as of Phase 2.5 — modifications require a Phase 2.5 amendment.
+//
 // Derived selectors for the DTP Zustand store.
 // Each selector is a plain function — callers wrap in useStore(s => select…(s))
 // and may use useShallow from 'zustand/react/shallow' for object stability.

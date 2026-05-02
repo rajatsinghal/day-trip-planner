@@ -1,3 +1,5 @@
+// FROZEN as of Phase 2.5 — modifications require a Phase 2.5 amendment.
+//
 // Bridge protocol between native (React Native) and the WebView-hosted
 // MapLibre GL JS map. Defined once here, imported by both sides.
 //
