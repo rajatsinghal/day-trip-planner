@@ -1,25 +1,19 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "useDefineForClassFields": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022"],
     "module": "ESNext",
-    "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
-    "jsx": "react-jsx",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
-    "paths": {
-      "@dtp/core": ["./packages/core/src/index.ts"],
-      "@dtp/core/*": ["./packages/core/src/*"]
-    }
+    "skipLibCheck": true
   },
-  "include": ["src", "packages/core/src"]
+  "include": ["src"]
 }

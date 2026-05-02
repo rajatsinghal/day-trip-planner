@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Day Trip Planner",
+    "slug": "day-trip-planner",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "scheme": "dtp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "requireFullScreen": false,
+      "bundleIdentifier": "io.github.rajatsinghal.daytripplanner"
+    },
+    "android": {
+      "package": "io.github.rajatsinghal.daytripplanner",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["INTERNET"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "@sentry/react-native"
+    ]
+  }
+}

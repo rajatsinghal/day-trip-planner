@@ -1,0 +1,14 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "paths": {
+      "@dtp/core": ["../packages/core/src/index.ts"],
+      "@dtp/core/*": ["../packages/core/src/*"]
+    }
+  },
+  "include": [".", "../packages/core/src"],
+  "exclude": ["ios", "android", "dist", ".expo", "node_modules"]
+}
