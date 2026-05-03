@@ -27,7 +27,10 @@ const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 const MAX_DAY_TRIP_KM = 250;
 const MIN_BLURB = 30;
-const MAX_BLURB = 200;
+// 400 cap matches AGENTS.md §7.2: 1–3 sentences, typically 80–300
+// chars, with headroom for entries that legitimately need a third
+// sentence (seasonal note, access caveat).
+const MAX_BLURB = 400;
 const MIN_DESTINATIONS_WARN = 15;
 
 function haversineKm(

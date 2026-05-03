@@ -106,11 +106,17 @@ describe('selectDisplayWindow', () => {
   });
 
   it('clamps start to current hour when selectedDay is today', () => {
-    const todayIso = new Date().toISOString().slice(0, 10);
+    // toIsoDate inside the selector uses LOCAL date (getFullYear/Month/Date),
+    // not UTC, so the test must build the same local-date string to match.
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const todayIso = `${y}-${m}-${d}`;
     const state = { windowHours: [0, 4] as [number, number], selectedDay: todayIso };
     const [start] = selectDisplayWindow(state);
     // Start must be at least currentHour (and at most WINDOW_MAX_HOUR - 1).
-    const currentHour = new Date().getHours();
+    const currentHour = now.getHours();
     expect(start).toBeGreaterThanOrEqual(Math.min(currentHour, 21));
   });
 });
