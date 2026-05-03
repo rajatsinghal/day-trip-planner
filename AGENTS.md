@@ -37,7 +37,7 @@ This app shows day trips around a "hub" (a metro area), ranked by
 forecast weather. Each hub is a TypeScript file in `src/hubs/` that
 exports a `Hub` object: a center coordinate (drive-time anchor) plus
 a list of destinations, each with coordinates, reasons-to-visit
-tags, and a one-sentence blurb.
+tags, and a short blurb.
 
 The hub you're adding will appear in the area picker dropdown. Users
 who pick your hub will see your destinations on the map, ranked by
@@ -75,7 +75,7 @@ interface Destination {
   lon: number;
   elevation_m?: number;  // optional, only set when meaningful (peaks, passes)
   reasons_to_visit: ReasonsToVisit[];  // see §4
-  blurb: string;       // one short sentence — see §7.2
+  blurb: string;       // 1–3 sentences — see §7.2
 }
 ```
 
@@ -285,24 +285,74 @@ Patterns that work:
 
 Target ~45 characters or less so the name doesn't wrap in the UI.
 
-### 7.2 Blurb tone
+### 7.2 Blurb shape
 
-One short sentence (typically 60–120 characters; the validator caps
-at 200). Fact-forward. **Do not write marketing copy.** No "amazing,"
-"breathtaking," "must-visit," "stunning," "hidden gem," or other
-review-site filler. Lead with the concrete thing: a number, a named
-feature, an activity, an historical fact.
+The blurb is what tells a user *why they should drive here*. It
+appears in the desktop hover popover (when you hover a sidebar row)
+and the mobile detail sheet (on tap). The sidebar list itself does
+not show it, so there's no row-density constraint — the blurb has
+room to actually say something.
 
-Models from the Seattle hub:
+The test is simple: **a stranger reading only the blurb should know
+why they'd come here.** Generic categories ("alpine lake reached by
+a moderate hike off I-90," "ferry-accessed island with shops, parks,
+and Puget Sound views") fail this test — they could describe fifty
+different places. A named feature, a number, or a distinctive fact
+passes it.
 
-- `'268-ft waterfall with viewing platforms and a short trail.'`
-- `'Iconic steep day hike; sweeping views of the Snoqualmie Valley.'`
-- `'Bavarian-themed town in the Cascades; shopping and river walks.'`
-- `'Tulip fields every April; farmland, roadside stands, festival gardens.'`
+**Length:** 1–3 sentences, typically 80–300 characters. The validator
+caps at 400. Don't pad — if a single sentence already says everything
+worth saying (Pike Place Market, the Mt Rainier Sunrise viewpoint),
+stop there. Padding to hit a length target is worse than a tight
+one-liner.
 
-Note the pattern: a noun phrase identifying *what it is*, often
-followed by a semicolon and a list of *what you do there*. Aim for
-that shape.
+**Shape:**
+
+1. *Lead with the specific draw.* A named feature, a number, an
+   historical fact, or the activity that's the actual reason to
+   come. "268-ft waterfall," "Bavarian-themed town in the Cascades,"
+   "Tulip fields every April" — not "scenic spot" or "pretty lake."
+2. *What you do there.* The primary one or two activities, in
+   concrete terms. "Viewing platforms and a short trail." "Shopping
+   and river walks." Skip if sentence 1 already implies it.
+3. *One practical note when relevant.* Best season, road closure,
+   ferry timing, parking that fills early, the one thing you'd be
+   sad to miss. Skip if there's nothing useful to say — practical
+   notes are a bonus, not a requirement.
+
+**Tone:** Fact-forward. Lead with the concrete thing — a number, a
+named feature, an activity, an historical fact — not a feeling. Use
+evocative words ("stunning," "iconic," "hidden gem," "breathtaking,"
+"must-visit," "magical," "charming") **rarely and conservatively**:
+they're earned for places that genuinely warrant them, never as
+filler. The default reaches for the specific fact instead. If a
+blurb leans on adjectives to do the work that a concrete noun could
+do, rewrite it.
+
+**Models** (some current, some illustrative):
+
+- `'268-ft waterfall with viewing platforms and a short trail; year-round, busiest in summer.'`
+- `'Bavarian-themed town in the Cascades; shopping, river walks, and Oktoberfest weekends in late September–October.'`
+- `'Tulip fields every April; farmland, roadside stands, and the Skagit Valley Tulip Festival in the first three weeks of the month.'`
+- `'Steep 4,000-ft climb to a 4,822-ft summit with the famous old roadside mailbox at the top; full day for most hikers.'`
+
+**Failure modes to watch for:**
+
+- *"Highest road-accessible point in the park; closed in winter."* —
+  describes what it *is* but not *why to come*. Fix: name the actual
+  draw (Mt Rainier views above the clouds, wildflower meadows in
+  late July, the trailhead network for Burroughs Mountain).
+- *"Alpine lake reached by a moderate hike off I-90."* — could be
+  any of fifty lakes. Fix: name what's distinctive (the lake's
+  color, the scale of the cirque, what's at the trail's end).
+- *"Ferry-accessed island with shops, parks, and Puget Sound views."* —
+  reads as a generic Sound island. Fix: what's specific about this
+  one vs. the next ferry over (which town, what activity, why this
+  ferry).
+
+If a current blurb already passes the "stranger knows why to come"
+test, leave it alone. The goal is to lift weak blurbs to the bar,
+not to rewrite ones that already work.
 
 ---
 
