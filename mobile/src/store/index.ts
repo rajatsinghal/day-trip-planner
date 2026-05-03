@@ -40,6 +40,9 @@ export interface DTPState {
   // internal: current abort controller (not serialized)
   _abortController: AbortController | null;
 
+  // internal: timestamp (ms) when AppState went to background; null when foreground.
+  _lastBackgrounded: number | null;
+
   // ── actions ───────────────────────────────────────────────────────────
 
   /** Switch hub: bumps fetchEpoch, clears weather + failures, triggers fetch. */
@@ -86,6 +89,15 @@ export interface DTPState {
    * the filtered set. Call this whenever filteredRows changes.
    */
   clearDetailIfFiltered: (filteredIds: Set<string>) => void;
+
+  /** Record the current time as the moment the app was backgrounded. */
+  markBackgrounded: () => void;
+
+  /**
+   * If the app was backgrounded > 60s ago, re-trigger a weather fetch by
+   * calling setHub (which bumps fetchEpoch). No-op otherwise.
+   */
+  refetchIfStale: () => void;
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────
@@ -125,6 +137,7 @@ export const useStore = create<DTPState>()(
       selectedId: null,
       fetchEpoch: 0,
       _abortController: null,
+      _lastBackgrounded: null,
 
       // ── actions ────────────────────────────────────────────────────────
 
@@ -252,6 +265,18 @@ export const useStore = create<DTPState>()(
         const { detailId } = get();
         if (detailId && !filteredIds.has(detailId)) {
           set({ detailId: null });
+        }
+      },
+
+      markBackgrounded: () => set({ _lastBackgrounded: Date.now() }),
+
+      refetchIfStale: () => {
+        const { _lastBackgrounded, selectedHubId } = get();
+        if (_lastBackgrounded === null) return;
+        const elapsed = Date.now() - _lastBackgrounded;
+        set({ _lastBackgrounded: null });
+        if (elapsed > 60_000) {
+          get().setHub(selectedHubId);
         }
       },
     }),
