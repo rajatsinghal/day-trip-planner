@@ -28,7 +28,7 @@ export const seattleHub: Hub = {
       lon: -121.7252,
       elevation_m: 1266,
       reasons_to_visit: ['hike'],
-      blurb: 'Iconic steep day hike; sweeping views of the Snoqualmie Valley.',
+      blurb: 'Steep day hike used as the classic Mt Rainier conditioner; 8 mi roundtrip with 3,100-ft gain to a 4,167-ft summit. Discover Pass required; lots of company on weekends.',
     },
     {
       id: 'rattlesnake-ledge',
@@ -36,7 +36,7 @@ export const seattleHub: Hub = {
       lat: 47.4338,
       lon: -121.7669,
       reasons_to_visit: ['hike', 'viewpoint'],
-      blurb: 'Short hike to a cliffside ledge overlooking Rattlesnake Lake.',
+      blurb: 'Short hike to an exposed sandstone ledge over Rattlesnake Lake and the Cedar River watershed; 4 mi roundtrip, 1,160-ft gain. Family-friendly and crowded on weekends.',
     },
     {
       id: 'mailbox-peak',
@@ -53,7 +53,7 @@ export const seattleHub: Hub = {
       lat: 47.4451,
       lon: -121.4192,
       reasons_to_visit: ['hike', 'lake'],
-      blurb: 'Alpine lake reached by a moderate hike off I-90.',
+      blurb: 'Deep cirque lake below Chair Peak, one of the closest true alpine lakes to Seattle; 7 mi roundtrip with ~1,700-ft gain over a saddle. Snow lingers into July.',
     },
     {
       id: 'franklin-falls',
@@ -61,7 +61,7 @@ export const seattleHub: Hub = {
       lat: 47.4135,
       lon: -121.443,
       reasons_to_visit: ['waterfall', 'hike'],
-      blurb: 'Family-friendly trail to a 70-ft waterfall.',
+      blurb: '70-ft waterfall on the South Fork Snoqualmie reached by a flat 2-mi family trail; year-round, with dramatic ice formations in winter.',
     },
     {
       id: 'wallace-falls',
@@ -69,7 +69,7 @@ export const seattleHub: Hub = {
       lat: 47.8686,
       lon: -121.6784,
       reasons_to_visit: ['waterfall', 'hike'],
-      blurb: 'Three-tier waterfall hike near Gold Bar.',
+      blurb: 'Three-tier hike past Lower, Middle, and Upper Wallace Falls — 367-ft total drop on the Skykomish, with the middle viewpoint framing the valley; 5.6 mi roundtrip, 1,300-ft gain.',
     },
     {
       id: 'bainbridge-island',
@@ -77,7 +77,7 @@ export const seattleHub: Hub = {
       lat: 47.6262,
       lon: -122.5237,
       reasons_to_visit: ['island', 'town'],
-      blurb: 'Ferry-accessed island with shops, parks, and Puget Sound views.',
+      blurb: '35-min ferry from Pier 52 to walkable Winslow village; Bainbridge Island Museum of Art (free) by the dock and the 150-acre Bloedel Reserve gardens 15 min north.',
     },
     {
       id: 'vashon-island',
@@ -111,7 +111,7 @@ export const seattleHub: Hub = {
       lon: -121.6423,
       elevation_m: 1950,
       reasons_to_visit: ['volcano', 'viewpoint', 'hike'],
-      blurb: 'Highest road-accessible point in the park; closed in winter.',
+      blurb: 'Visitor center at 6,400 ft with the closest road-up view of the Emmons Glacier on Rainier; trailhead for Burroughs Mountain and Sourdough Ridge wildflower meadows. Open early July–late September.',
     },
     {
       id: 'leavenworth',
@@ -135,7 +135,7 @@ export const seattleHub: Hub = {
       lat: 48.4069,
       lon: -122.6483,
       reasons_to_visit: ['coast', 'viewpoint', 'hike'],
-      blurb: 'Bridge walk, beaches, tide pools, and forest trails.',
+      blurb: 'The most-visited state park in Washington; walk the 1935 bridge 180 ft above tidal current, then hit Rosario Beach tidepools, North Beach, and forest trails on Whidbey and Fidalgo.',
     },
     {
       id: 'coupeville',
@@ -151,7 +151,7 @@ export const seattleHub: Hub = {
       lat: 48.117,
       lon: -122.7606,
       reasons_to_visit: ['town', 'historic', 'coast'],
-      blurb: 'Victorian seaport with galleries, bookshops, and bayfront dining.',
+      blurb: 'Only intact Victorian seaport on the West Coast (1870s–80s boom-time); National Historic Landmark district with galleries, bookshops, and views across Admiralty Inlet to Whidbey.',
     },
     {
       id: 'port-gamble',
@@ -208,7 +208,7 @@ export const seattleHub: Hub = {
       lon: -123.4972,
       elevation_m: 1598,
       reasons_to_visit: ['viewpoint', 'hike', 'ski'],
-      blurb: 'Alpine meadows, Olympic Mountain panoramas, snowshoeing in winter.',
+      blurb: '17-mi drive from Port Angeles to a 5,242-ft ridge with 360° views of the Olympics and Strait of Juan de Fuca; ranger-led snowshoe walks Saturday afternoons in winter, road open Fri–Mon Dec–Mar.',
     },
     {
       id: 'lake-crescent',
@@ -257,7 +257,7 @@ export const seattleHub: Hub = {
       lat: 47.1954,
       lon: -120.9384,
       reasons_to_visit: ['town'],
-      blurb: 'Foothills town on I-90 with easy access to trails and rivers.',
+      blurb: 'I-90 town on the Cascade east-slope; Cle Elum Bakery (operating since 1906, original brick oven), the Coal Mines Trail to Roslyn, and trailheads into the Teanaway.',
     },
     {
       id: 'roslyn',
@@ -273,7 +273,7 @@ export const seattleHub: Hub = {
       lat: 47.0013,
       lon: -120.5478,
       reasons_to_visit: ['town', 'historic'],
-      blurb: 'University town in Kittitas Valley; rodeo grounds and historic downtown.',
+      blurb: 'Central Washington University town in the Kittitas Valley; the Ellensburg Rodeo (since 1923) takes over Labor Day weekend alongside the Kittitas County Fair. Historic downtown the rest of the year.',
     },
     {
       id: 'anacortes',
@@ -322,7 +322,7 @@ export const seattleHub: Hub = {
       lat: 47.2743,
       lon: -120.8727,
       reasons_to_visit: ['hike'],
-      blurb: 'Open forest with meadows, creeks, and mountain biking.',
+      blurb: '50,000-acre community forest north of Cle Elum, the first state-owned community forest in Washington; mountain biking, horseback trails, and wildflower meadows along the Teanaway River.',
     },
     {
       id: 'snoqualmie-pass',
@@ -331,7 +331,7 @@ export const seattleHub: Hub = {
       lon: -121.3993,
       elevation_m: 921,
       reasons_to_visit: ['ski', 'hike'],
-      blurb: 'Year-round mountain stop; skiing, PCT access, alpine lakes nearby.',
+      blurb: 'Four ski areas of The Summit at Snoqualmie (incl. Alpental for expert terrain) and the most lit night-skiing terrain in the U.S.; PCT and alpine-lake trailheads in summer.',
     },
     {
       id: 'dash-point-sp',
@@ -339,7 +339,7 @@ export const seattleHub: Hub = {
       lat: 47.3203,
       lon: -122.4098,
       reasons_to_visit: ['coast', 'picnic'],
-      blurb: 'Sandy beach and forest trails on Puget Sound.',
+      blurb: '3,300 ft of sandy Puget Sound beach in Federal Way with 11 mi of forest trails behind; a regional skimboarding spot at low tide.',
     },
     {
       id: 'point-defiance',
@@ -356,14 +356,6 @@ export const seattleHub: Hub = {
       lon: -121.688,
       reasons_to_visit: ['hike'],
       blurb: 'Ancient Douglas-fir grove on the White River; interpretive trails.',
-    },
-    {
-      id: 'flaming-geyser-sp',
-      name: 'Flaming Geyser St Park',
-      lat: 47.2713,
-      lon: -122.0344,
-      reasons_to_visit: ['picnic', 'paddle'],
-      blurb: 'Green River park; picnics, kayak launches, short trails.',
     },
     {
       id: 'kanaskat-palmer-sp',
@@ -395,7 +387,7 @@ export const seattleHub: Hub = {
       lat: 48.2234,
       lon: -122.7724,
       reasons_to_visit: ['coast', 'hike', 'historic'],
-      blurb: 'Bluff trails and beach on the west side of Whidbey Island.',
+      blurb: 'WWII coastal-defense fort on the west bluff of Whidbey; explorable Battery 248 bunkers (bring a flashlight), paragliding launch off the parade lawn, and smallmouth bass at Lake Pondilla.',
     },
     {
       id: 'fort-worden',
@@ -412,7 +404,7 @@ export const seattleHub: Hub = {
       lon: -121.8157,
       elevation_m: 1644,
       reasons_to_visit: ['hike', 'viewpoint', 'historic'],
-      blurb: 'Fire lookout hike with 360° Cascade and Sound views.',
+      blurb: '1921 fire lookout at ~5,300 ft with 360° views of Baker, Shuksan, Rainier, and the Olympics; 5.4 mi roundtrip with 2,300-ft gain through forest and a steep boulder field near the top.',
     },
     {
       id: 'lake-22',
@@ -420,7 +412,7 @@ export const seattleHub: Hub = {
       lat: 48.0779,
       lon: -121.7437,
       reasons_to_visit: ['hike', 'lake'],
-      blurb: 'Cirque lake below Mt Pilchuck; classic Mountain Loop hike.',
+      blurb: 'Cirque lake on the north shoulder of Mt Pilchuck, set in the Lake Twentytwo Research Natural Area (logging banned since 1947); 5.4 mi roundtrip through old-growth cedar with 1,350-ft gain.',
     },
     {
       id: 'heather-lake',
@@ -428,7 +420,7 @@ export const seattleHub: Hub = {
       lat: 48.0833,
       lon: -121.7788,
       reasons_to_visit: ['hike', 'lake'],
-      blurb: 'Short family hike to an alpine lake in old-growth forest.',
+      blurb: 'Small alpine lake in a rocky cirque below Mt Pilchuck, reached through old-growth cedar; 4.6 mi roundtrip with 1,100-ft gain, plus a short loop around the shore.',
     },
     {
       id: 'big-four-ice-caves',
@@ -468,7 +460,7 @@ export const seattleHub: Hub = {
       lat: 48.6019,
       lon: -122.4358,
       reasons_to_visit: ['hike', 'viewpoint'],
-      blurb: 'Sandstone ridge with views over Samish Bay and San Juans.',
+      blurb: 'Cliff-top sandstone perch in Blanchard State Forest with views over Samish Bay, the San Juans, and the Olympics; 6.4 mi roundtrip with ~1,900-ft gain. Bring a headlamp for the bat caves.',
     },
     {
       id: 'tipsoo-lake',
@@ -494,7 +486,7 @@ export const seattleHub: Hub = {
       lat: 46.8672,
       lon: -121.5227,
       reasons_to_visit: ['hike', 'viewpoint'],
-      blurb: 'Easy alpine loop on the PCT with Rainier front-row seating.',
+      blurb: 'Easy 3.4-mi alpine loop on the PCT around Naches Peak at Chinook Pass; lupine carpets in late July–August and a head-on Rainier view from the south side. SR-410 closes in winter.',
     },
     {
       id: 'lake-cushman',
@@ -502,7 +494,7 @@ export const seattleHub: Hub = {
       lat: 47.446,
       lon: -123.2085,
       reasons_to_visit: ['lake', 'paddle', 'fish'],
-      blurb: 'Deep lake at the foot of the Olympic Mountains; beaches and boat launches.',
+      blurb: '4,000-acre clear-water reservoir on the south Olympics, max depth ~260 ft; swimming, boating, scuba, with the Staircase entrance to Olympic NP a mile up the road.',
     },
     {
       id: 'kachess-lake',
@@ -510,7 +502,7 @@ export const seattleHub: Hub = {
       lat: 47.2828,
       lon: -121.2566,
       reasons_to_visit: ['lake', 'paddle', 'fish'],
-      blurb: 'Large Cascade reservoir; swimming, boating, lakeside camp.',
+      blurb: 'Large I-90 reservoir 5 mi west of Cle Elum Lake; 150-site Kachess Campground on the forested NW shore, kokanee fishing, swim beach.',
     },
     {
       id: 'cooper-lake',
@@ -526,7 +518,7 @@ export const seattleHub: Hub = {
       lat: 47.2789,
       lon: -121.0736,
       reasons_to_visit: ['lake', 'paddle'],
-      blurb: 'Long reservoir with pebble beaches and paddleboarding.',
+      blurb: 'Reservoir on the Cle Elum River 8 mi NW of town; Wish Poosh Campground and Speelyi Beach for swimming, paddleboarding, and kokanee fishing.',
     },
     {
       id: 'dungeness-spit',
@@ -575,7 +567,7 @@ export const seattleHub: Hub = {
       lon: -121.0857,
       elevation_m: 1238,
       reasons_to_visit: ['ski'],
-      blurb: 'Cascade crest pass; winter skiing, summer mountain biking.',
+      blurb: 'Vail-owned ski area on US-2; lift-served downhill mountain biking off the Hogsback chair late June through early October — the only lift-access bike park in Washington.',
     },
     {
       id: 'twin-falls-nb',
