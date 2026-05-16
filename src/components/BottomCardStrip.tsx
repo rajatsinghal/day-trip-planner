@@ -94,7 +94,7 @@ export function BottomCardStrip({
   return (
     <div
       ref={containerRef}
-      className="pointer-events-auto flex snap-x snap-mandatory gap-2 overflow-x-auto scroll-smooth px-3 pb-3"
+      className="pointer-events-auto flex snap-x snap-mandatory gap-2 overflow-x-auto scroll-smooth px-3 pb-1"
     >
         {rows.map((row) => {
           const wx = row.weather;

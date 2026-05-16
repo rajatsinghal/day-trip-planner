@@ -88,7 +88,7 @@ export function MobileDetailSheet({ row, onClose, tempUnit }: Props) {
           </div>
         </div>
 
-        <div className="px-4 pb-6">
+        <div className="px-4 pb-3">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex-shrink-0 text-3xl" aria-hidden>
               {wxLabel ? wxLabel.emoji : '·'}
